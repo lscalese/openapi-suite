@@ -27,49 +27,27 @@ XData OpenAPI [ MimeType = application/json ]
       "url":"http://localhost:52796/openapisuite/api/v1"
     }
   ],
-  "tags":[
-    {
-      "name":"Download",
-      "description":"Services for generate and download the code.",
-      "externalDocs":{
-        "description":"Find out more",
-        "url":"https://github.com/lscalese/openapi-suite"
-      }
-    },
-    {
-      "name":"Install",
-      "description":"Services install the generated code on this server.",
-      "externalDocs":{
-        "description":"Find out more",
-        "url":"https://github.com/lscalese/openapi-suite"
-      }
-    }
-  ],
   "paths":{
-    "/generate/client":{
+    "/generate":{
       "post":{
-        "tags":[
-          "Download"
-        ],
-        "summary":"Generate interoperability client production or simple HTTP client for code download purpose.",
-        "description":"Generate models, business services, business operation, business process and production class from an OpenAPI specification.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.  The generated code will be deleted from the server after this request response.",
-        "operationId":"GenerateInteropClient",
+        "summary":"Generate code for download purpose.",
+        "operationId":"generateCode",
         "parameters":[
           {
-            "name":"interoperability",
+            "name":"packageName",
             "in":"query",
-            "description":"If true interoperability classes will be generated otherwise only a simple HTTP client.",
+            "description":"package name of the generated classes.",
             "required":true,
             "style":"form",
             "explode":true,
             "schema":{
-              "type":"boolean"
+              "type":"string"
             }
           },
           {
-            "name":"packagename",
+            "name":"type",
             "in":"query",
-            "description":"Name of the package used for code generation.",
+            "description":"Type of generation possible value are : client, production or rest.",
             "required":true,
             "style":"form",
             "explode":true,
@@ -108,135 +86,15 @@ XData OpenAPI [ MimeType = application/json ]
         }
       }
     },
-    "/generate/server":{
+    "/install":{
       "post":{
-        "tags":[
-          "Download"
-        ],
-        "summary":"Generate server-side classes %REST for code download purpose.",
-        "description":"Generate server-side classes %REST, Dispatch class and implementation.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.  The generated code will be deleted from the server after this request response.",
-        "operationId":"GenerateServer",
+        "summary":"Generate code and compile on the server.",
+        "operationId":"generateAndInstall",
         "parameters":[
           {
-            "name":"packagename",
+            "name":"packageName",
             "in":"query",
-            "description":"Name of the package used for code generation.",
-            "required":true,
-            "style":"form",
-            "explode":true,
-            "schema":{
-              "type":"string"
-            }
-          }
-        ],
-        "requestBody":{
-          "content":{
-            "text/plain":{
-              "schema":{
-                "type":"string",
-                "example":"https://petstore3.swagger.io/api/v3/openapi.json"
-              }
-            },
-            "application/json":{
-            }
-          },
-          "required":true
-        },
-        "responses":{
-          "200":{
-            "description":"Successful operation.  The generated code is returned in XML format.",
-            "content":{
-              "application/xml":{
-              }
-            }
-          },
-          "400":{
-            "description":"Bad Request"
-          },
-          "405":{
-            "description":"Validation exception"
-          }
-        }
-      }
-    },
-    "/install/client":{
-      "post":{
-        "tags":[
-          "Install"
-        ],
-        "summary":"Generate interoperability client production or simple HTTP client and compile on this server.",
-        "description":"Generate models, business services, business operation, business process and production class from an OpenAPI specification.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.",
-        "operationId":"InstallClient",
-        "parameters":[
-          {
-            "name":"interoperability",
-            "in":"query",
-            "description":"If true interoperability classes will be generated otherwise only a simple HTTP client.",
-            "required":true,
-            "style":"form",
-            "explode":true,
-            "schema":{
-              "type":"boolean"
-            }
-          },
-          {
-            "name":"packagename",
-            "in":"query",
-            "description":"Name of the package used for code generation.",
-            "required":true,
-            "style":"form",
-            "explode":true,
-            "schema":{
-              "type":"string"
-            }
-          }
-        ],
-        "requestBody":{
-          "content":{
-            "text/plain":{
-              "schema":{
-                "type":"string",
-                "example":"https://petstore3.swagger.io/api/v3/openapi.json"
-              }
-            },
-            "application/json":{
-            }
-          },
-          "required":true
-        },
-        "responses":{
-          "200":{
-            "description":"Successful operation.  The generated code is returned in XML format.",
-            "content":{
-              "application/json":{
-                "schema":{
-                  "$ref":"#/components/schemas/ImportStatus"
-                }
-              }
-            }
-          },
-          "400":{
-            "description":"Bad Request"
-          },
-          "405":{
-            "description":"Validation exception"
-          }
-        }
-      }
-    },
-    "/install/server":{
-      "post":{
-        "tags":[
-          "Install"
-        ],
-        "summary":"Generate server-side classes %REST and compile on this server.",
-        "description":"Generate server-side classes %REST, Dispatch class and implementation.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.",
-        "operationId":"InstallServer",
-        "parameters":[
-          {
-            "name":"packagename",
-            "in":"query",
-            "description":"Name of the package used for code generation.",
+            "description":"package name of the generated classes.",
             "required":true,
             "style":"form",
             "explode":true,
@@ -245,21 +103,10 @@ XData OpenAPI [ MimeType = application/json ]
             }
           },
           {
-            "name":"compile",
+            "name":"type",
             "in":"query",
-            "description":"If true the code will be compiled after import.",
+            "description":"Type of generation possible value are : client, production or rest.",
             "required":true,
-            "style":"form",
-            "explode":true,
-            "schema":{
-              "type":"boolean"
-            }
-          },
-          {
-            "name":"webapplication",
-            "in":"query",
-            "description":"WebApplication name to create, if empty no web application won't be created.",
-            "required":false,
             "style":"form",
             "explode":true,
             "schema":{
@@ -267,9 +114,20 @@ XData OpenAPI [ MimeType = application/json ]
             }
           },
           {
-            "name":"dispatchclass",
+            "name":"namespace",
             "in":"query",
-            "description":"If webapplication is not empty set here the name of the dispatch class.",
+            "description":"Namespace to install the generated code.",
+            "required":true,
+            "style":"form",
+            "explode":true,
+            "schema":{
+              "type":"string"
+            }
+          },
+          {
+            "name":"webApplicationName",
+            "in":"query",
+            "description":"WebApplication name to create, if empty web application won't be created.",
             "required":false,
             "style":"form",
             "explode":true,
@@ -293,7 +151,7 @@ XData OpenAPI [ MimeType = application/json ]
         },
         "responses":{
           "200":{
-            "description":"Successful operation.  The generated code is returned in XML format.",
+            "description":"Check the import status object for more information about the generation and compile process.",
             "content":{
               "application/json":{
                 "schema":{
@@ -317,16 +175,10 @@ XData OpenAPI [ MimeType = application/json ]
       "ImportStatus":{
         "type":"object",
         "properties":{
-          "importStatus":{
-            "type":"boolean"
-          },
-          "compileStatus":{
-            "type":"boolean"
-          },
-          "importErr":{
+          "generateStatus":{
             "type":"string"
           },
-          "compileErr":{
+          "compileStatus":{
             "type":"string"
           },
           "logs":{

@@ -1,0 +1,204 @@
+<server>
+    Set installOnServerEnabled = $Get(^openapisuite.config("web","enable-install-onserver"), 1)
+    Do ##class(%SYS.Namespace).ListAll(.ns)
+    Kill ns("%SYS"), ns("HS"), ns("HSCUSTOM"), ns("HSLIB"), ns("HSSYS")
+</server>
+<!doctype html>
+    <html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <title>IRIS Production Generator</title>
+
+        <script type="text/javascript">
+            
+            function submitForm(install) {
+                if ($("#appName").val()=='') {
+                    alert('Package name is mandatory');
+                    return;
+                }
+
+                if (install) {
+                    callInstall()
+                } else {
+                    callGenerate()
+                }
+                return
+            }
+
+            function callInstall() {
+                
+                var service = "/openapisuite/install?packageName="+$("#appName").val()+"&type="+$("#generate").val()+"&namespace="+$("#namespace").val();
+                var contentType = "text/plain";
+                var content = $("#spec").val();
+
+                try {
+                    content = JSON.parse(content);
+                    contentType = "application/json";
+                } catch (e) {
+                    contentType = "text/plain";
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: service,
+                    processData: false,
+                    contentType: contentType,
+                    data: content,
+                    async: true,
+                    success: function (data){
+                        json = JSON.parse(data)
+                        delete json.logs
+                        $('#modal-body').html(JSON.stringify(json));
+                        $('#exampleModal').modal('show');
+                    },
+                    error: function(xhr) {
+                        alert(xhr)
+                    }
+                });
+
+                return;
+            }
+
+            function callGenerate() {
+                
+                var service = "/openapisuite/generate?packageName="+$("#appName").val()+"&type="+$("#generate").val();
+                var contentType = "text/plain";
+                var content = $("#spec").val();
+
+                try {
+                    content = JSON.parse(content);
+                    contentType = "application/json";
+                } catch (e) {
+                    contentType = "text/plain";
+                }
+
+                $.ajax({
+                    type: "POST",
+                    url: service,
+                    processData: false,
+                    contentType: contentType,
+                    data: content,
+                    async: true,
+                    success: function (data){
+                        downloadFile(data, jQuery("#appName").val()+".xml", "text/xml")
+                        $('#modal-body').html('Request success, start to download sources in xml format...')
+                        $('#exampleModal').modal('show')
+                    },
+                    error: function(xhr) {
+                        alert(xhr)
+                    }
+                });
+
+                return;
+            }
+
+            function downloadFile(data, name, type) {
+                var anchor = document.createElement('a')
+                anchor.href = window.URL.createObjectURL(new Blob([data], { type }));
+                anchor.download = name
+                anchor.click()
+            }
+        </script>
+    </head>
+    <body onload="">
+        <nav class="navbar navbar-dark bg-dark">
+            <span class="navbar-brand mb-0 h1">OpenAPI-Suite</span>
+            <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
+                <li class="nav-item active">
+                <a class="nav-link" href="https://github.com/lscalese/openapi-suite">Github</a>
+            </li>
+            </ul>   
+        </nav>
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading>">Swagger ObjectScript Code Generator</h1>
+                <p class="lead text-muted">
+                    OpenAPI-Suite is a set of tools to generate ObjectScript fron OpenAPI specification.  This Web Interface allows to generate code for download purpose and also to generate and compile the code on this server.
+                </p>
+            </div>
+        </section>
+        <div class="container">
+            <div class="form-group">
+                <label for="appName">Application package name</label>
+                <input type="text" class="form-control" id="appName"  name="appName" placeholder="petshop" value="petshop#($Increment(^webGenCount))#"/>
+                <small id="packageNameHelp" class="form-text text-muted">It must be a valid and non existing ObjectScript package name.</small>
+            </div>
+            <div class="form-group">
+                <label for="namespace">Namespace</label>
+                <select class="custom-select" id="namespace" name="namespace">
+                    <option></option>
+                    <server>
+                        Set k = ""
+                        For  {
+                            Set k = $Order(ns(k))
+                            Quit:k=""
+                            &html<<option value="#(k)#">#(k)#</option>>
+                        }
+                    </server>
+                </select>
+                <small id="NamespaceHelp" class="form-text text-muted">Namespace to install the generated code.  Leave empty for code download purpose.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="spec">OpenAPI specification</label>
+                <textarea class="form-control" id="spec" rows="4" placeholder="copy/paste your OpenAPI specification in json format or the specification URL.">https://petstore3.swagger.io/api/v3/openapi.json</textarea>
+                <small id="SpecHelp" class="form-text text-muted">
+                    Could be the specification in YAML or JSON format or an URL pointing to the OpenAPI specification.   Specification version 1.x or 2. are automatically converted to Version 3 before processing.
+                </small>
+            </div>
+
+            
+            <div class="form-group">
+                <label for="generate">What do you want to generate ?</label>
+                <select class="custom-select" id="generate" name="generate">
+                    <option value="client">HTTP Client</option>
+                    <option value="production">Client Production</option>
+                    <option value="rest">REST Server</option>
+                </select>
+            </div>
+
+            <div class="container">
+                <div class="row">
+                    <div class="col-sm">
+                        <button type="button" class="btn btn-lg btn-dark btn-block" onclick="submitForm(false)">Download Only</button>
+                    </div>
+                    <div class="col-sm">
+                        <button type="button" class="btn btn-lg btn-danger btn-block" onclick="submitForm(true)" #($s('installOnServerEnabled:"disabled title=""Feature disabled by the server.""",1:""))#>Install On Server</button>
+                    </div>
+                </div>
+            </div>
+        
+        </div>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Request Status</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+            </div>
+        </div>
+        </div>
+
+
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    </body>
+</html>

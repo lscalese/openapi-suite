@@ -12,7 +12,6 @@ In an IRIS Terminal
 
 ```
 zpm "install openapi-suite"
-
 ; optional
 zpm "install swagger-ui"
 ```
@@ -22,6 +21,8 @@ zpm "install swagger-ui"
 ```
 git clone git@github.com:lscalese/openapi-suite.git
 cd openapi-suite
+# in case of permission problem wit iris-main.log
+# touch iris-main.log && chmod 777 iris-main.log
 docker-compose up -d
 ```
 

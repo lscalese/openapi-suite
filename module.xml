@@ -8,6 +8,28 @@
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
       <Resource Name="dc.openapi.suite.PKG"/>
+      <CSPApplication 
+            SourcePath="/web"
+            DeployPath="${cspdir}/openapisuite/rest"
+            Url="/openapisuite" 
+            CookiePath="/openapisuite/rest/"
+            PasswordAuthEnabled="1"
+            AuthenticationMethods="64" 
+            Recurse="1"
+            MatchRoles=":%DB_${Namespace}"
+            DispatchClass="dc.openapi.client.api.disp"/>
+      
+      <CSPApplication
+            SourcePath="/web"
+            DeployPath="${cspdir}/openapisuite/ui"
+            Url="/openapisuite/ui"
+            CookiePath="/openapisuite/ui"
+            ServeFiles="1"
+            PasswordAuthEnabled="1"
+            AuthenticationMethods="64" 
+            MatchRoles=":%DB_${Namespace}"
+            Recurse="1"/>
+
       <UnitTest Name="/tests" Package="dc.sample.unittests" Phase="test"/>
       <Dependencies>
         <ModuleReference>
@@ -16,7 +38,11 @@
         </ModuleReference>
         <ModuleReference>
           <Name>openapi-client-gen</Name>
-          <Version>2.0.3</Version>
+          <Version>2.0.4</Version>
+        </ModuleReference>
+        <ModuleReference>
+          <Name>io-redirect</Name>
+          <Version>1.0.2</Version>
         </ModuleReference>
       </Dependencies>
     </Module>
