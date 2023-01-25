@@ -1,0 +1,314 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Swagger Generator for Objectscript",
+    "description": "This an api to generate ObjectScript code from a OpenAPI specification.  It allows to generate interoperability client, simple HTTP client or the server-side REST application.",
+    "termsOfService": "http://swagger.io/terms/",
+    "contact": {
+      "email": "lorenzo.scalese@gmail.com"
+    },
+    "license": {
+      "name": "MIT License",
+      "url": "https://github.com/lscalese/openapi-server-gen/blob/master/LICENSE"
+    },
+    "version": "1"
+  },
+  "externalDocs": {
+    "description": "Find out OpenAPI suite on Intersystems developer community",
+    "url": "https://community.intersystems.com/"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:52796/openapisuite/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Download",
+      "description": "Services for generate and download the code.",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://github.com/lscalese/openapi-suite"
+      }
+    },
+    {
+      "name": "Install",
+      "description": "Services install the generated code on this server.",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://github.com/lscalese/openapi-suite"
+      }
+    }
+  ],
+  "paths": {
+    "/generate/client": {
+      "post": {
+        "tags": [
+          "Download"
+        ],
+        "summary": "Generate interoperability client production or simple HTTP client for code download purpose.",
+        "description": "Generate models, business services, business operation, business process and production class from an OpenAPI specification.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.  The generated code will be deleted from the server after this request response.",
+        "operationId": "GenerateInteropClient",
+        "parameters": [
+          {
+            "name": "interoperability",
+            "in": "query",
+            "description": "If true interoperability classes will be generated otherwise only a simple HTTP client.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "packagename",
+            "in": "query",
+            "description": "Name of the package used for code generation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "https://petstore3.swagger.io/api/v3/openapi.json"
+              }
+            },
+            "application/json": {
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.  The generated code is returned in XML format.",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "405": {
+            "description": "Validation exception"
+          }
+        }
+      }
+    },
+    "/generate/server": {
+      "post": {
+        "tags": [
+          "Download"
+        ],
+        "summary": "Generate server-side classes %REST for code download purpose.",
+        "description": "Generate server-side classes %REST, Dispatch class and implementation.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.  The generated code will be deleted from the server after this request response.",
+        "operationId": "GenerateServer",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "https://petstore3.swagger.io/api/v3/openapi.json"
+              }
+            },
+            "application/json": {
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "packagename",
+            "in": "query",
+            "description": "Name of the package used for code generation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.  The generated code is returned in XML format.",
+            "content": {
+              "application/xml": {}
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "405": {
+            "description": "Validation exception"
+          }
+        }
+      }
+    },
+    "/install/client": {
+      "post": {
+        "tags": [
+          "Install"
+        ],
+        "summary": "Generate interoperability client production or simple HTTP client and compile on this server.",
+        "description": "Generate models, business services, business operation, business process and production class from an OpenAPI specification.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.",
+        "operationId": "InstallClient",
+        "parameters": [
+          {
+            "name": "interoperability",
+            "in": "query",
+            "description": "If true interoperability classes will be generated otherwise only a simple HTTP client.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "packagename",
+            "in": "query",
+            "description": "Name of the package used for code generation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "https://petstore3.swagger.io/api/v3/openapi.json"
+              }
+            },
+            "application/json": {
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful operation.  The generated code is returned in XML format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "405": {
+            "description": "Validation exception"
+          }
+        }
+      }
+    },
+    "/install/server": {
+      "post": {
+        "tags": [
+          "Install"
+        ],
+        "summary": "Generate server-side classes %REST and compile on this server.",
+        "description": "Generate server-side classes %REST, Dispatch class and implementation.  If the content-tyep is application/json the body must contain the specification in JSON format.  If it's text/plain it must be an URL pointing to the OpenAPI specification.",
+        "operationId": "InstallServer",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string",
+                "example": "https://petstore3.swagger.io/api/v3/openapi.json"
+              }
+            },
+            "application/json": {
+            }
+          },
+          "required": true
+        },
+        "parameters": [
+          {
+            "name": "packagename",
+            "in": "query",
+            "description": "Name of the package used for code generation.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compile",
+            "in": "query",
+            "description": "If true the code will be compiled after import.",
+            "required": true,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "webapplication",
+            "in": "query",
+            "description": "WebApplication name to create, if empty no web application won't be created.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dispatchclass",
+            "in": "query",
+            "description": "If webapplication is not empty set here the name of the dispatch class.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful operation.  The generated code is returned in XML format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "405": {
+            "description": "Validation exception"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ImportStatus": {
+        "type": "object",
+        "properties": {
+          "importStatus": {
+            "type": "boolean"
+          },
+          "compileStatus": {
+            "type": "boolean"
+          },
+          "importErr": {
+            "type": "string"
+          },
+          "compileErr": {
+            "type": "string"
+          },
+          "logs": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

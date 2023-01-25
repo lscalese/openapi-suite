@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-  <Document name="dc-sample.ZPM">
+  <Document name="openapi-suite.ZPM">
     <Module>
-      <Name>dc-sample</Name>
-      <Version>1.0.10</Version>
-      <Description>Basic InterSystems IRIS Development Template</Description>
+      <Name>openapi-suite</Name>
+      <Version>0.0.1</Version>
+      <Description>ObjectScript class generator from OpenAPI specification</Description>
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
-      <Resource Name="dc.sample.PKG"/>
+      <Resource Name="dc.openapi.suite.PKG"/>
       <UnitTest Name="/tests" Package="dc.sample.unittests" Phase="test"/>
-
+      <Dependencies>
+        <ModuleReference>
+          <Name>openapi-server-gen</Name>
+          <Version>0.0.2</Version>
+        </ModuleReference>
+        <ModuleReference>
+          <Name>openapi-client-gen</Name>
+          <Version>2.0.3</Version>
+        </ModuleReference>
+      </Dependencies>
     </Module>
   </Document>
 </Export>
