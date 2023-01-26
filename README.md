@@ -91,4 +91,4 @@ Set sc = ##class(dc.openapi.server.ServerAppGenerator).Generate("petstoreserver"
 
 ## Developer community article
 
-More information about OpenAPI-suite are available on this (developer community article)[https://community.intersystems.com/post/openapi-suite].  
+More information about OpenAPI-suite are available on this [developer community article](https://community.intersystems.com/post/openapi-suite).  
