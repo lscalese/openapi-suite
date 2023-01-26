@@ -10,20 +10,20 @@
       <Resource Name="dc.openapi.suite.PKG"/>
       <CSPApplication 
             SourcePath="/web"
-            DeployPath="${cspdir}/openapisuite/rest"
+            DeployPath="${cspdir}/openapisuite"
             Url="/openapisuite" 
-            CookiePath="/openapisuite/rest/"
+            CookiePath="/openapisuite/"
             PasswordAuthEnabled="1"
             AuthenticationMethods="64" 
             Recurse="1"
             MatchRoles=":%DB_${Namespace}"
-            DispatchClass="dc.openapi.client.api.disp"/>
+            DispatchClass="dc.openapi.suite.api.disp"/>
       
       <CSPApplication
             SourcePath="/web"
             DeployPath="${cspdir}/openapisuite/ui"
             Url="/openapisuite/ui"
-            CookiePath="/openapisuite/ui"
+            CookiePath="/openapisuite/"
             ServeFiles="1"
             PasswordAuthEnabled="1"
             AuthenticationMethods="64" 

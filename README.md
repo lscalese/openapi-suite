@@ -6,9 +6,29 @@
 
 # openapi-suite
 
+This package gather a set of tools for ObjectScript code generation from Swagger specification 3.0.  
+
+It includes : 
+
+* openapi-server-gen
+* openapi-client-gen
+* openapi-common-lib
+
+The following features are available : 
+
+* Web interface to generate the code.  
+* REST services to expose code generation.  
+* Automatic conversion of Swagger specification 1.x or 2.x to version 3.x before processing.
+
+OpenAPI-suite can generate code : 
+
+* Simple HTTP client
+* Production client (with business services, processes and operation)
+* Server-side REST classes.
+
+
 ## Installation ZPM
 
-In an IRIS Terminal
 
 ```
 zpm "install openapi-suite"
@@ -26,8 +46,49 @@ cd openapi-suite
 docker-compose up -d
 ```
 
-## Description
-
 ## Usage
 
-## What does it do
+### Web interface
+
+The UI is available at this address(*)  [http://localhost:52796/openapisuite/ui/index.csp](http://localhost:52796/openapisuite/ui/index.csp)  
+
+<img width="1123" src="https://raw.githubusercontent.com/lscalese/openapi-suite/master/asset/ui.png">
+
+(*) Adapt the port number if needed  
+
+### Swagger-ui
+
+If you install swagger-ui, you can open [http://localhost:52796/swagger-ui/index.html](http://localhost:52796/swagger-ui/index.html) and explore 
+[http://localhost:52796/openapisuite/_spec](http://localhost:52796/openapisuite/_spec) to test REST services.  
+  
+<img width="1123" src="https://raw.githubusercontent.com/lscalese/openapi-suite/master/asset/swagger.png">
+
+## Generate by programming
+
+All code snipets are available in the class (dc.openapi.suite.samples.PetStore)[https://github.com/lscalese/openapi-suite/blob/master/src/dc/openapi/suite/samples/PetStore.cls]  
+
+### Simple HTTP client
+
+```
+Set packageName = "petstoreclient"
+Set features("simpleHttpClientOnly") = 1
+Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json", .features)
+```
+
+### Production client
+
+```
+Set packageName = "petstoreclient"
+Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json")
+```
+
+### Rest server-side class
+
+```
+Set packageName = "petstoreserver", webApplication = "/petstore/api"
+Set sc = ##class(dc.openapi.server.ServerAppGenerator).Generate("petstoreserver", "https://petstore3.swagger.io/api/v3/openapi.json", webApplication)
+```
+
+## Developer community article
+
+More information about OpenAPI-suite are available on this (developer community article)[https://community.intersystems.com/post/openapi-suite].  
