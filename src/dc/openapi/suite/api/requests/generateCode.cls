@@ -12,16 +12,16 @@ Property %ContentType As %String;
 Property %URL As %String [ InitialExpression = {..#URL} ];
 
 /// Use this property for body content with content-type = text/plain.<br/>
-Property body1 As %String [ Required ];
+Property body1 As %String;
 
 /// Use this property for body content with content-type = application/json.<br/>
-Property body2 As %DynamicObject [ Required ];
+Property body2 As %DynamicObject;
 
 /// package name of the generated classes.
-Property querypackageName As %String;
+Property querypackageName As %String [ Required ];
 
 /// Type of generation possible value are : client, production or rest.
-Property querytype As %String;
+Property querytype As %String [ Required ];
 
 /// Load object properties from %CSP.Request object.
 Method LoadFromRequest(request As %CSP.Request = {%request}) As %Status
@@ -43,9 +43,25 @@ Method LoadFromRequest(request As %CSP.Request = {%request}) As %Status
 Method RequestValidate() As %Status
 {
 	Set sc = $$$OK
+	
 	$$$QuitOnError(..%ValidateObject())
 
-	Quit:'$IsObject(..body1)&&'$IsObject(..body2) $$$ERROR(5659, "body1 or body2 required")
+	Set sc = ##class(%Dictionary.Classname).IsValid(..querypackageName _ ".test")
+	If $$$ISERR(sc) {
+		Quit $$$ERROR(5001, "Invalid packageName.")
+	}
+
+	If "clientproductionrest" '[ ..querytype {
+		Quit $$$ERROR(5001, "type must be client, production or rest.")
+	}
+
+	If ..%ContentType = "text/plain", ..body1 = "" {
+		Quit $$$ERROR(5659, "body1 required")
+	}
+
+	If ..%ContentType = "application/json", '$IsObject(..body1) {
+		Quit $$$ERROR(5659, "body2 required")
+	}
 	
 	Quit sc
 }

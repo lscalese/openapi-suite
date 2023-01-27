@@ -18,7 +18,7 @@ Property body1 As %String [ Required ];
 Property body2 As %DynamicObject [ Required ];
 
 /// Namespace to install the generated code.
-Property querynamespace As %String;
+Property querynamespace As %String [ Required ];
 
 /// package name of the generated classes.
 Property querypackageName As %String;
@@ -51,8 +51,30 @@ Method LoadFromRequest(request As %CSP.Request = {%request}) As %Status
 Method RequestValidate() As %Status
 {
 	Set sc = $$$OK
+	
 	$$$QuitOnError(..%ValidateObject())
-	Quit:'$IsObject(..body1)&&'$IsObject(..body2) $$$ERROR(5659, "body1 or body2 required")
+
+	If '$ListFind($ListBuild("client","production","rest"), ..querytype) {
+		Quit $$$ERROR(5001, "type must be client, production or rest.")
+	}
+
+	Set sc = ##class(%Dictionary.Classname).IsValid(..querypackageName _ ".test")
+	If $$$ISERR(sc) {
+		Quit $$$ERROR(5001, "Invalid packageName.")
+	}
+
+	If ..querywebApplicationName'="", $Extract(..querywebApplicationName) '= "/" {
+		Quit $$$ERROR(5001, "Invalid webApplicationName.")
+	}
+
+	If ..%ContentType = "text/plain", ..body1 = "" {
+		Quit $$$ERROR(5659, "body1 required")
+	}
+
+	If ..%ContentType = "application/json", '$IsObject(..body1) {
+		Quit $$$ERROR(5659, "body2 required")
+	}
+	
 	Quit sc
 }
 

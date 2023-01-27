@@ -16,12 +16,18 @@ ClassMethod SwaggerSpec() As %Status
 ClassMethod generateAndInstall(messageRequest As dc.openapi.suite.api.requests.generateAndInstall) As %Status
 {
 
-	If '$Get(^openapisuite.config("web","enable-install-onserver"), 1) $$$ThrowStatus($$$ERROR(5001, "This service has been disabled on the server"))
+	If '$Get(^openapisuite.config("web","enable-install-onserver"), 0) $$$ThrowStatus($$$ERROR(5001, "This service has been disabled on the server.  To enable :  Set ^openapisuite.config(""web"",""enable-install-onserver"")=1" ))
 
 	Set ns = $NAMESPACE
 	New $NAMESPACE
 	
 	Set sc = $$$OK
+
+	Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
+
+	If messageRequest.querytype = "production", '##class(%EnsembleMgr).IsEnsembleNamespace(messageRequest.querynamespace) {
+		$$$ThrowStatus($$$ERROR(5001, "Ensemble not enabled on the target namespace " _ messageRequest.querynamespace))
+	}
 
 	Lock +^zGenConcurrency(" "_messageRequest.querypackageName):10
 	If '$Test {
@@ -37,8 +43,6 @@ ClassMethod generateAndInstall(messageRequest As dc.openapi.suite.api.requests.g
 	Set features("compile") = 0
 
 	Set outputRedirect = ""
-
-	If 'installInThisNamespace TSTART
 
 	If messageRequest.querytype = "client" {
 		
@@ -74,11 +78,11 @@ ClassMethod generateAndInstall(messageRequest As dc.openapi.suite.api.requests.g
 		$$$ThrowStatus($$$ERROR(5001, "type must be client, production or rest"))
 	}
 
-	Do $SYSTEM.OBJ.ExportPackageToStream(messageRequest.querypackageName, .xmlStream)
 	
 	If 'installInThisNamespace {
-		TROLLBACK 1
-
+		Do $SYSTEM.OBJ.ExportPackageToStream(messageRequest.querypackageName, .xmlStream)
+		Do $SYSTEM.OBJ.DeletePackage(messageRequest.querypackageName)
+		
 		Set $NAMESPACE = messageRequest.querynamespace
 		Set scCompile = $$$ADDSC(sc, $SYSTEM.OBJ.LoadStream(.xmlStream, "ck", .err))
 		
@@ -120,6 +124,8 @@ ClassMethod generateCode(messageRequest As dc.openapi.suite.api.requests.generat
 
 	Set specification = $Select(messageRequest.body1'="": messageRequest.body1, 1: messageRequest.body2)
 
+	Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
+
 	TSTART
 	
 	Set features("compile") = 0
@@ -143,7 +149,7 @@ ClassMethod generateCode(messageRequest As dc.openapi.suite.api.requests.generat
 	
 	TROLLBACK
 	
-	Lock -^zGenConcurrency
+	Lock -^zGenConcurrency(" "_messageRequest.querypackageName)
 
 	If $$$ISERR(sc) $$$ThrowStatus(sc)
 

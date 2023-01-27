@@ -54,6 +54,13 @@ The UI is available at this address(*)  [http://localhost:52796/openapisuite/ui/
 
 <img width="1123" src="https://raw.githubusercontent.com/lscalese/openapi-suite/master/asset/ui.png">
 
+By default the feature `Install On Server` is disabled.  
+To enable, just : 
+
+```ObjectScript
+Set ^openapisuite.config("web","enable-install-onserver") = 1
+```
+
 (*) Adapt the port number if needed  
 
 ### Swagger-ui
@@ -65,7 +72,7 @@ If you install swagger-ui, you can open [http://localhost:52796/swagger-ui/index
 
 ## Generate by programming
 
-All code snipets are available in the class (dc.openapi.suite.samples.PetStore)[https://github.com/lscalese/openapi-suite/blob/master/src/dc/openapi/suite/samples/PetStore.cls]  
+All code snipets are available in the class [dc.openapi.suite.samples.PetStore](https://github.com/lscalese/openapi-suite/blob/master/src/dc/openapi/suite/samples/PetStore.cls)  
 
 ### Simple HTTP client
 
@@ -82,7 +89,7 @@ Set packageName = "petstoreclient"
 Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json")
 ```
 
-### Rest server-side class
+### Rest server-side classes
 
 ```
 Set packageName = "petstoreserver", webApplication = "/petstore/api"
@@ -91,4 +98,4 @@ Set sc = ##class(dc.openapi.server.ServerAppGenerator).Generate("petstoreserver"
 
 ## Developer community article
 
-More information about OpenAPI-suite are available on this [developer community article](https://community.intersystems.com/post/openapi-suite).  
+More information about OpenAPI-suite will be available soon on a [developer community article](https://community.intersystems.com/post/openapi-suite).  

@@ -1,7 +1,8 @@
 <server>
-    Set installOnServerEnabled = $Get(^openapisuite.config("web","enable-install-onserver"), 1)
+    Set installOnServerEnabled = $Get(^openapisuite.config("web","enable-install-onserver"), 0)
     Do ##class(%SYS.Namespace).ListAll(.ns)
-    Kill ns("%SYS"), ns("HS"), ns("HSCUSTOM"), ns("HSLIB"), ns("HSSYS")
+    Kill ns("%SYS"), ns("HS"), ns("HSCUSTOM"), ns("HSLIB"), ns("HSSYS"), ns($namespace)
+    
 </server>
 <!doctype html>
     <html lang="en">
@@ -17,10 +18,16 @@
         <script type="text/javascript">
             
             function submitForm(install) {
+
                 if ($("#appName").val()=='') {
                     alert('Package name is mandatory');
                     return;
                 }
+
+
+                $('#exampleModal').modal('show')
+                $('#srvresponse').val('Wait server response ...')
+                $('.btn').prop('disabled', true)
 
                 if (install) {
                     callInstall()
@@ -32,7 +39,9 @@
 
             function callInstall() {
                 
-                var service = "/openapisuite/install?packageName="+$("#appName").val()+"&type="+$("#generate").val()+"&namespace="+$("#namespace").val();
+                var service = "/openapisuite/install?packageName="+$("#appName").val()
+                                +"&type="+$("#generate").val()+"&namespace="+$("#namespace").val()
+                                +"&webApplicationName="+encodeURIComponent($("#webApplicationName").val())
                 var contentType = "text/plain";
                 var content = $("#spec").val();
 
@@ -52,12 +61,17 @@
                     async: true,
                     success: function (data){
                         json = JSON.parse(data)
-                        delete json.logs
-                        $('#modal-body').html(JSON.stringify(json));
-                        $('#exampleModal').modal('show');
+                        //delete json.logs
+                        $('#srvresponse').val(JSON.stringify(json));
+                        $('#srvresponse').val('Generate class status : ' + json.generateStatus + '\n' +
+                                              'Compile status : ' + json.compileStatus + '\n' +
+                                              '------- LOGS ------\n' + json.logs);
+                        
+                        $('.btn').prop('disabled', false);
                     },
                     error: function(xhr) {
-                        alert(xhr)
+                        $('#srvresponse').val(xhr.responseText);
+                        $('.btn').prop('disabled', false);
                     }
                 });
 
@@ -77,6 +91,7 @@
                     contentType = "text/plain";
                 }
 
+                
                 $.ajax({
                     type: "POST",
                     url: service,
@@ -86,11 +101,17 @@
                     async: true,
                     success: function (data){
                         downloadFile(data, jQuery("#appName").val()+".xml", "text/xml")
-                        $('#modal-body').html('Request success, start to download sources in xml format...')
+                        $('#srvresponse').val('Request success, download start ...')
                         $('#exampleModal').modal('show')
+
+                        $('.btn').prop('disabled', false)
                     },
                     error: function(xhr) {
-                        alert(xhr)
+                        $('#srvresponse').val(xhr.responseText);
+                        $('#exampleModal').modal('show')
+                        
+                        $('.btn').prop('disabled', false)
+                        
                     }
                 });
 
@@ -122,37 +143,14 @@
                 </p>
             </div>
         </section>
+
         <div class="container">
             <div class="form-group">
                 <label for="appName">Application package name</label>
-                <input type="text" class="form-control" id="appName"  name="appName" placeholder="petshop" value="petshop#($Increment(^webGenCount))#"/>
+                <input type="text" class="form-control" id="appName"  name="appName" placeholder="petstore" value="petstore#($Increment(^webGenCount))#"/>
                 <small id="packageNameHelp" class="form-text text-muted">It must be a valid and non existing ObjectScript package name.</small>
             </div>
-            <div class="form-group">
-                <label for="namespace">Namespace</label>
-                <select class="custom-select" id="namespace" name="namespace">
-                    <option></option>
-                    <server>
-                        Set k = ""
-                        For  {
-                            Set k = $Order(ns(k))
-                            Quit:k=""
-                            &html<<option value="#(k)#">#(k)#</option>>
-                        }
-                    </server>
-                </select>
-                <small id="NamespaceHelp" class="form-text text-muted">Namespace to install the generated code.  Leave empty for code download purpose.</small>
-            </div>
 
-            <div class="form-group">
-                <label for="spec">OpenAPI specification</label>
-                <textarea class="form-control" id="spec" rows="4" placeholder="copy/paste your OpenAPI specification in json format or the specification URL.">https://petstore3.swagger.io/api/v3/openapi.json</textarea>
-                <small id="SpecHelp" class="form-text text-muted">
-                    Could be the specification in YAML or JSON format or an URL pointing to the OpenAPI specification.   Specification version 1.x or 2. are automatically converted to Version 3 before processing.
-                </small>
-            </div>
-
-            
             <div class="form-group">
                 <label for="generate">What do you want to generate ?</label>
                 <select class="custom-select" id="generate" name="generate">
@@ -162,23 +160,69 @@
                 </select>
             </div>
 
+            <div class="row">
+                <div class="col-sm">
+                <div class="form-group">
+                    <label for="namespace">Namespace</label>
+                    <select class="custom-select" id="namespace" name="namespace">
+                        <option value="#($namespace)#" selected>#($namespace)#</option>
+                        <server>
+                            Set k = ""
+                            For  {
+                                Set k = $Order(ns(k))
+                                Quit:k=""
+                                &html<<option value="#(k)#">#(k)#</option>>
+                            }
+                        </server>
+                    </select>
+                        <small id="NamespaceHelp" class="form-text text-muted">Namespace to install the generated code.  Leave empty for code download purpose.</small>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="form-group">
+                        <label for="webApplicationName">Web Application Name</label>
+                        <input type="text" class="form-control" id="webApplicationName"  name="webApplicationName" placeholder="Example : /petstore/api" value=""/>
+                        <small id="packageNameHelp" class="form-text text-muted">Optional. Leave empty if you don't want create a web application.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="spec">OpenAPI specification</label>
+                <textarea class="form-control" id="spec" rows="4" placeholder="copy/paste your OpenAPI specification in json format or the specification URL.">https://petstore3.swagger.io/api/v3/openapi.json</textarea>
+                <small id="SpecHelp" class="form-text text-muted">
+                    Could be the specification in JSON format or an URL pointing to the OpenAPI specification.   Specification version 1.x or 2. are automatically converted to Version 3 before processing.
+                </small>
+            </div>
+
             <div class="container">
                 <div class="row">
                     <div class="col-sm">
-                        <button type="button" class="btn btn-lg btn-dark btn-block" onclick="submitForm(false)">Download Only</button>
+                        <button type="button" class="btn btn-lg btn-dark btn-block" 
+                            onclick="submitForm(false);"
+                            data-loading-text="Loading ...">Download Only</button>
                     </div>
                     <div class="col-sm">
-                        <button type="button" class="btn btn-lg btn-danger btn-block" onclick="submitForm(true)" #($s('installOnServerEnabled:"disabled title=""Feature disabled by the server.""",1:""))#>Install On Server</button>
+                        <button type="button" class="btn btn-lg btn-danger btn-block" 
+                        data-loading-text="Loading ..."
+                        onclick="submitForm(true)" #($s('installOnServerEnabled:"disabled",1:""))#>Install On Server</button>
+                        <small id="SpecHelp" class="form-text text-muted">Feature disabled by the server.  To enable : Set ^openapisuite.config("web","enable-install-onserver") = 1</small>
                     </div>
                 </div>
             </div>
         
         </div>
 
+        
+        <!--<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
+        Launch demo modal
+        </button>-->
+
+        
 
         <!-- Modal -->
         <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">Request Status</h5>
@@ -187,7 +231,7 @@
                 </button>
             </div>
             <div class="modal-body" id="modal-body">
-                ...
+                <textarea class="form-control" id="srvresponse" rows="15" placeholder="server response"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -195,7 +239,6 @@
             </div>
         </div>
         </div>
-
 
         <script src="https://code.jquery.com/jquery-3.4.1.min.js" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>

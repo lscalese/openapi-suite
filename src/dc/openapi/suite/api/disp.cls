@@ -38,7 +38,7 @@ ClassMethod generateAndInstall() As %Status
 		Set requestMessage = ##class(dc.openapi.suite.api.requests.generateAndInstall).%New()
 		Do requestMessage.LoadFromRequest(%request)
 		Set scValidateRequest = requestMessage.RequestValidate()
-		If $$$ISERR(scValidateRequest) Do ##class(%REST.Impl).%ReportRESTError(..#HTTP400BADREQUEST,$$$ERROR(5001,"Invalid requestMessage object.")) Quit
+		If $$$ISERR(scValidateRequest) Do ##class(%REST.Impl).%ReportRESTError(..#HTTP400BADREQUEST,$$$ERROR(5001,"Invalid requestMessage object." _ $SYSTEM.Status.GetOneErrorText(scValidateRequest) )) Quit
 		Set response = ##class(dc.openapi.suite.api.impl).generateAndInstall(requestMessage)
 		Do ##class(dc.openapi.suite.api.impl).%WriteResponse(response)
 	} Catch(ex) {
@@ -62,7 +62,7 @@ ClassMethod generateCode() As %Status
 		Set requestMessage = ##class(dc.openapi.suite.api.requests.generateCode).%New()
 		Do requestMessage.LoadFromRequest(%request)
 		Set scValidateRequest = requestMessage.RequestValidate()
-		If $$$ISERR(scValidateRequest) Do ##class(%REST.Impl).%ReportRESTError(..#HTTP400BADREQUEST,$$$ERROR(5001,"Invalid requestMessage object.")) Quit
+		If $$$ISERR(scValidateRequest) Do ##class(%REST.Impl).%ReportRESTError(..#HTTP400BADREQUEST,$$$ERROR(5001,"Invalid requestMessage object. "_ $SYSTEM.Status.GetOneErrorText(scValidateRequest))) Quit
 		Set response = ##class(dc.openapi.suite.api.impl).generateCode(requestMessage)
 		Do ##class(dc.openapi.suite.api.impl).%WriteResponse(response)
 	} Catch(ex) {
