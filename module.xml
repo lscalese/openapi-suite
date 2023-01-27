@@ -3,7 +3,7 @@
   <Document name="openapi-suite.ZPM">
     <Module>
       <Name>openapi-suite</Name>
-      <Version>0.0.1</Version>
+      <Version>0.9.0</Version>
       <Description>ObjectScript class generator from OpenAPI specification</Description>
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
