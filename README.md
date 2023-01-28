@@ -41,7 +41,7 @@ zpm "install swagger-ui"
 ```
 git clone git@github.com:lscalese/openapi-suite.git
 cd openapi-suite
-# in case of permission problem wit iris-main.log
+# in case of permission issue with iris-main.log
 # touch iris-main.log && chmod 777 iris-main.log
 docker-compose up -d
 ```
@@ -85,7 +85,7 @@ Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petst
 ### Production client
 
 ```
-Set packageName = "petstoreclient"
+Set packageName = "petstoreproduction"
 Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json")
 ```
 
