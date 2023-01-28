@@ -23,7 +23,8 @@ ClassMethod generateAndInstall(messageRequest As dc.openapi.suite.api.requests.g
 	
 	Set sc = $$$OK
 
-	Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
+	; should be useless (it's added to module.xml)
+	; Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
 
 	If messageRequest.querytype = "production", '##class(%EnsembleMgr).IsEnsembleNamespace(messageRequest.querynamespace) {
 		$$$ThrowStatus($$$ERROR(5001, "Ensemble not enabled on the target namespace " _ messageRequest.querynamespace))
@@ -124,7 +125,8 @@ ClassMethod generateCode(messageRequest As dc.openapi.suite.api.requests.generat
 
 	Set specification = $Select(messageRequest.body1'="": messageRequest.body1, 1: messageRequest.body2)
 
-	Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
+	; should be useless (it's added to module.xml)
+	; Do:##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
 
 	TSTART
 	
