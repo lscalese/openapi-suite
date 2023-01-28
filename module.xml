@@ -30,7 +30,10 @@
             MatchRoles=":%DB_${Namespace}"
             Recurse="1"/>
 
-      <UnitTest Name="/tests" Package="dc.sample.unittests" Phase="test"/>
+      <UnitTest Name="/tests" Package="dc.openapi.suite.unittests" Phase="test"/>
+      <Invoke Class="community.utils.SSLClient" Method="CreateSSLConfiguration">
+        <Arg>DefaultSSL</Arg>
+      </Invoke>
       <Dependencies>
         <ModuleReference>
           <Name>openapi-server-gen</Name>
@@ -38,7 +41,7 @@
         </ModuleReference>
         <ModuleReference>
           <Name>openapi-client-gen</Name>
-          <Version>2.0.4</Version>
+          <Version>2.0.5</Version>
         </ModuleReference>
         <ModuleReference>
           <Name>io-redirect</Name>
