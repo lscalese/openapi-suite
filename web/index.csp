@@ -62,7 +62,6 @@
                     success: function (data){
                         json = JSON.parse(data)
                         //delete json.logs
-                        $('#srvresponse').val(JSON.stringify(json));
                         $('#srvresponse').val('Generate class status : ' + json.generateStatus + '\n' +
                                               'Compile status : ' + json.compileStatus + '\n' +
                                               '------- LOGS ------\n' + json.logs);
@@ -118,6 +117,17 @@
                 return;
             }
 
+            function generateTypeChange(value) {
+
+                if (value !== 'rest') {
+                    $('#divWebApp').addClass('d-none');
+                } else {
+                    $('#divWebApp').removeClass('d-none');
+                }
+
+                return;
+            }
+
             function downloadFile(data, name, type) {
                 var anchor = document.createElement('a')
                 anchor.href = window.URL.createObjectURL(new Blob([data], { type }));
@@ -153,7 +163,7 @@
 
             <div class="form-group">
                 <label for="generate">What do you want to generate ?</label>
-                <select class="custom-select" id="generate" name="generate">
+                <select class="custom-select" id="generate" name="generate" onchange="generateTypeChange(this.value)">
                     <option value="client">HTTP Client</option>
                     <option value="production">Client Production</option>
                     <option value="rest">REST Server</option>
@@ -178,7 +188,7 @@
                         <small id="NamespaceHelp" class="form-text text-muted">Namespace to install the generated code.  Leave empty for code download purpose.</small>
                     </div>
                 </div>
-                <div class="col-sm">
+                <div class="col-sm d-none" id="divWebApp">
                     <div class="form-group">
                         <label for="webApplicationName">Web Application Name</label>
                         <input type="text" class="form-control" id="webApplicationName"  name="webApplicationName" placeholder="Example : /petstore/api" value=""/>

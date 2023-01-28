@@ -10,15 +10,15 @@ This package gather a set of tools for ObjectScript code generation from Swagger
 
 It includes : 
 
-* openapi-server-gen
-* openapi-client-gen
-* openapi-common-lib
+* openapi-server-gen [OEX link](https://openexchange.intersystems.com/package/openapi-server-gen)
+* openapi-client-gen [OEX link](https://openexchange.intersystems.com/package/Open-API-Client-Gen)
+* openapi-common-lib [OEX link](https://openexchange.intersystems.com/package/openapi-common-lib)
 
 The following features are available : 
 
 * Web interface to generate the code.  
 * REST services to expose code generation.  
-* Automatic conversion of Swagger specification 1.x or 2.x to version 3.x before processing.
+* Automatic conversion of Swagger specification 1.x or 2.x to version 3.x before processing (using [swagger-converter-cli](https://openexchange.intersystems.com/package/swagger-converter-cli) ).
 
 OpenAPI-suite can generate code : 
 
