@@ -139,7 +139,7 @@
             <div class="container">
                 <h1 class="jumbotron-heading>">Swagger ObjectScript Code Generator</h1>
                 <p class="lead text-muted">
-                    OpenAPI-Suite is a set of tools to generate ObjectScript fron OpenAPI specification.  This Web Interface allows to generate code for download purpose and also to generate and compile the code on this server.
+                    OpenAPI-Suite is a set of tools to generate ObjectScript from OpenAPI specification.  This Web Interface allows to generate code for download purpose and also to generate and compile the code on this server.
                 </p>
             </div>
         </section>
