@@ -84,12 +84,11 @@
                 var content = $("#spec").val();
 
                 try {
-                    content = JSON.parse(content);
+                    JSON.parse(content);
                     contentType = "application/json";
                 } catch (e) {
                     contentType = "text/plain";
                 }
-
                 
                 $.ajax({
                     type: "POST",

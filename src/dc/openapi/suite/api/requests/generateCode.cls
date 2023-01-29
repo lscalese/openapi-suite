@@ -59,7 +59,7 @@ Method RequestValidate() As %Status
 		Quit $$$ERROR(5659, "body1 required")
 	}
 
-	If ..%ContentType = "application/json", '$IsObject(..body1) {
+	If ..%ContentType = "application/json", '$IsObject(..body2) {
 		Quit $$$ERROR(5659, "body2 required")
 	}
 	
