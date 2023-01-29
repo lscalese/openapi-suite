@@ -37,11 +37,11 @@
       <Dependencies>
         <ModuleReference>
           <Name>openapi-server-gen</Name>
-          <Version>0.0.2</Version>
+          <Version>0.0.3</Version>
         </ModuleReference>
         <ModuleReference>
           <Name>openapi-client-gen</Name>
-          <Version>2.0.5</Version>
+          <Version>2.0.6</Version>
         </ModuleReference>
         <ModuleReference>
           <Name>io-redirect</Name>
