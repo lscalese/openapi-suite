@@ -3,7 +3,7 @@
   <Document name="openapi-suite.ZPM">
     <Module>
       <Name>openapi-suite</Name>
-      <Version>0.9.0</Version>
+      <Version>0.9.1</Version>
       <Description>ObjectScript class generator from OpenAPI specification</Description>
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
@@ -37,11 +37,11 @@
       <Dependencies>
         <ModuleReference>
           <Name>openapi-server-gen</Name>
-          <Version>0.0.3</Version>
+          <Version>0.0.4</Version>
         </ModuleReference>
         <ModuleReference>
           <Name>openapi-client-gen</Name>
-          <Version>2.0.6</Version>
+          <Version>2.0.7</Version>
         </ModuleReference>
         <ModuleReference>
           <Name>io-redirect</Name>
