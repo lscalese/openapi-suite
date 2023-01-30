@@ -64,7 +64,7 @@ ClassMethod addPetUsingProduction() As %Status
     Set messageRequest = ##class(petstoreproduction.requests.addPet).%New()
     Set messageRequest.%ContentType = "application/json"
     
-    Do messageRequest.body1NewObject().%JSONImport({"id":123,"name":"Kitty Galore","photoUrls":["https://www.tippett.com/wp-content/uploads/2017/01/ca2DC049.130.1264.jpg"],"status":"pending"})
+    Do messageRequest.PetNewObject().%JSONImport({"id":123,"name":"Kitty Galore","photoUrls":["https://www.tippett.com/wp-content/uploads/2017/01/ca2DC049.130.1264.jpg"],"status":"pending"})
     
     ; MessageResponse will be an instance of petstoreclient.responses.addPet
     Set sc = ##class(petstoreproduction.Utils).invokeHostSync("petstoreproduction.bp.SyncProcess", messageRequest, "petstoreproduction.bs.ProxyService", , .messageResponse)
@@ -86,7 +86,7 @@ ClassMethod addPetUsingHttpClient() As %Status
     Set messageRequest = ##class(petstoreclient.requests.addPet).%New()
     Set messageRequest.%ContentType = "application/json"
     
-    Do messageRequest.body1NewObject().%JSONImport({"id":456,"name":"Mittens","photoUrls":["https://static.wikia.nocookie.net/disney/images/c/cb/Profile_-_Mittens.jpg/revision/latest?cb=20200709180903"],"status":"available"})
+    Do messageRequest.PetNewObject().%JSONImport({"id":456,"name":"Mittens","photoUrls":["https://static.wikia.nocookie.net/disney/images/c/cb/Profile_-_Mittens.jpg/revision/latest?cb=20200709180903"],"status":"available"})
     
     Set httpClient = ##class(petstoreclient.HttpClient).%New("https://petstore3.swagger.io/api/v3","DefaultSSL")
 
