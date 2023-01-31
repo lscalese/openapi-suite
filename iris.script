@@ -15,5 +15,6 @@
 
     // load all the code of the project as a ZPM package
     zn "IRISAPP"
+    zpm "install swagger-ui"
     zpm "load /home/irisowner/irisdev/ -v":1:1
     halt
