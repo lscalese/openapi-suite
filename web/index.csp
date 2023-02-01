@@ -215,7 +215,7 @@
                         <button type="button" class="btn btn-lg btn-danger btn-block" 
                         data-loading-text="Loading ..."
                         onclick="submitForm(true)" #($s('installOnServerEnabled:"disabled",1:""))#>Install On Server</button>
-                        <small id="SpecHelp" class="form-text text-muted">Feature disabled by the server.  To enable : Set ^openapisuite.config("web","enable-install-onserver") = 1</small>
+                        <small id="SpecHelp" class="form-text text-muted #($s(installOnServerEnabled:"d-hidden",1:""))#">Feature disabled by the server.  To enable : Set ^openapisuite.config("web","enable-install-onserver") = 1</small>
                     </div>
                 </div>
             </div>
