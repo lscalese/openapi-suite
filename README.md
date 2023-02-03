@@ -46,6 +46,11 @@ cd openapi-suite
 docker-compose up -d
 ```
 
+**Note**: 
+It seems a problem could be occurs with BuildKit on Ubuntu.  
+In this case, you should use the compose plugin with the command `docker compose up -d` plugin instead of `docker-compose up -d`.  
+See the official documentation to instal compose plugin : [Install the Compose plugin | Docker Documentation](https://docs.docker.com/compose/install/linux/)  
+
 ## Usage
 
 ### Web interface
@@ -98,4 +103,4 @@ Set sc = ##class(dc.openapi.server.ServerAppGenerator).Generate("petstoreserver"
 
 ## Developer community article
 
-More information about OpenAPI-suite will be available soon on a [developer community article](https://community.intersystems.com/post/openapi-suite).  
+More information about OpenAPI-suite are available on this [developer community article](https://community.intersystems.com/post/openapi-suite).  
