@@ -8,9 +8,9 @@ on:
 
 env:
   # Change this section according to your needs
-  IMAGE_NAME:   online
-  SERVICE:      online
-  DOMAIN_NAME:  online.community.intersystems.com
+  IMAGE_NAME:   openapisuite
+  SERVICE:      openapisuite
+  DOMAIN_NAME:  openapisuite.community.intersystems.com
 
   # Leave this section untouched
   PROJECT_ID:   iris-community-demos
