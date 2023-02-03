@@ -10,7 +10,7 @@ env:
   # Change this section according to your needs
   IMAGE_NAME:   openapisuite
   SERVICE:      openapisuite
-  DOMAIN_NAME:  openapisuite.community.intersystems.com
+  DOMAIN_NAME:  openapisuite.demo.community.intersystems.com
 
   # Leave this section untouched
   PROJECT_ID:   iris-community-demos

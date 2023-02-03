@@ -8,12 +8,13 @@
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
       <Resource Name="dc.openapi.suite.PKG"/>
+      <Default Name="passwordEnabled" Value="1" />
       <CSPApplication 
             SourcePath="/web"
             DeployPath="${cspdir}/openapisuite"
             Url="/openapisuite" 
             CookiePath="/openapisuite/"
-            PasswordAuthEnabled="1"
+            PasswordAuthEnabled="${passwordEnabled}"
             AuthenticationMethods="64" 
             Recurse="1"
             MatchRoles=":%DB_${Namespace}"
@@ -25,7 +26,7 @@
             Url="/openapisuite/ui"
             CookiePath="/openapisuite/"
             ServeFiles="1"
-            PasswordAuthEnabled="1"
+            PasswordAuthEnabled="${passwordEnabled}"
             AuthenticationMethods="64" 
             MatchRoles=":%DB_${Namespace}"
             Recurse="1"/>
@@ -45,7 +46,7 @@
         </ModuleReference>
         <ModuleReference>
           <Name>io-redirect</Name>
-          <Version>1.0.*</Version>
+          <Version>*</Version>
         </ModuleReference>
       </Dependencies>
     </Module>
