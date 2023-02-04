@@ -8,7 +8,7 @@ Class dc.openapi.suite.samples.OASClient
 /// Set specification="https://petstore3.swagger.io/api/v3/openapi.json" ;<br/>
 /// Set packageName = "petstoreclient" <br/>
 /// Set type = "client" ; possible value : client, production, rest <br/>
-/// Set sc = ##class(dc.openapi.suite.samples.PetStore).GenerateFromRemoteServer(server,specification,packageName,type)
+/// Set sc = ##class(dc.openapi.suite.samples.OASClient).GenerateFromRemoteServer(server,specification,packageName,type)
 ClassMethod GenerateFromRemoteServer(server As %String, specfication As %String, packageName As %String, type As %String) As %Status
 {
     Set sc = $$$OK
@@ -34,7 +34,9 @@ ClassMethod GenerateFromRemoteServer(server As %String, specfication As %String,
 
     If r.HttpResponse.StatusCode '= 200 {
         Set sc = $SYSTEM.Status.Error(5001, "Server response is http status code " _ r.HttpResponse.StatusCode)
+        
         Write !," ! Http status code : ", r.HttpResponse.httpStatusCode
+
         If $IsObject(r.HttpResponse.Data) {
             Write !,r.HttpResponse.Data.Read()
         } Else {
@@ -43,9 +45,10 @@ ClassMethod GenerateFromRemoteServer(server As %String, specfication As %String,
         
         Return sc
     }
+    
     Set sc = $SYSTEM.OBJ.LoadStream(r.HttpResponse.Data,"ck")
 
-    Quit sc
+    Return sc
 }
 
 }
