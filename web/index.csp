@@ -27,7 +27,7 @@
 
                 $('#exampleModal').modal('show')
                 $('#srvresponse').val('Wait server response ...')
-                $('.btn').prop('disabled', true)
+                $('.toDisable').prop('disabled', true)
 
                 if (install) {
                     callInstall()
@@ -66,11 +66,11 @@
                                               'Compile status : ' + json.compileStatus + '\n' +
                                               '------- LOGS ------\n' + json.logs);
                         
-                        $('.btn').prop('disabled', false);
+                        $('.toDisable').prop('disabled', false);
                     },
                     error: function(xhr) {
                         $('#srvresponse').val(xhr.responseText);
-                        $('.btn').prop('disabled', false);
+                        $('.toDisable').prop('disabled', false);
                     }
                 });
 
@@ -102,13 +102,13 @@
                         $('#srvresponse').val('Request success, download start ...')
                         $('#exampleModal').modal('show')
 
-                        $('.btn').prop('disabled', false)
+                        $('.toDisable').prop('disabled', false)
                     },
                     error: function(xhr) {
                         $('#srvresponse').val(xhr.responseText);
                         $('#exampleModal').modal('show')
                         
-                        $('.btn').prop('disabled', false)
+                        $('.toDisable').prop('disabled', false)
                         
                     }
                 });
@@ -207,15 +207,15 @@
             <div class="container">
                 <div class="row">
                     <div class="col-sm">
-                        <button type="button" class="btn btn-lg btn-dark btn-block" 
+                        <button type="button" class="btn btn-lg btn-dark btn-block toDisable" 
                             onclick="submitForm(false);"
                             data-loading-text="Loading ...">Download Only</button>
                     </div>
                     <div class="col-sm">
-                        <button type="button" class="btn btn-lg btn-danger btn-block" 
+                        <button type="button" class="btn btn-lg btn-danger btn-block #($s(installOnServerEnabled:"toDisable",1:""))#" 
                         data-loading-text="Loading ..."
                         onclick="submitForm(true)" #($s('installOnServerEnabled:"disabled",1:""))#>Install On Server</button>
-                        <small id="SpecHelp" class="form-text text-muted #($s(installOnServerEnabled:"d-hidden",1:""))#">Feature disabled by the server.  To enable : Set ^openapisuite.config("web","enable-install-onserver") = 1</small>
+                        <small id="SpecHelp" class="form-text text-muted ">Feature disabled by the server.  To enable : Set ^openapisuite.config("web","enable-install-onserver") = 1</small>
                     </div>
                 </div>
             </div>
