@@ -12,13 +12,13 @@ Property %ContentType As %String;
 Property %URL As %String [ InitialExpression = {..#URL} ];
 
 /// Use this property for body content with content-type = text/plain.<br/>
-Property body1 As %String;
+Property body1 As %String (MAXLEN = 2048);
 
 /// Use this property for body content with content-type = application/json.<br/>
 Property body2 As %DynamicObject;
 
 /// package name of the generated classes.
-Property querypackageName As %String [ Required ];
+Property querypackageName As %String (MAXLEN = 256) [ Required ];
 
 /// Type of generation possible value are : client, production or rest.
 Property querytype As %String [ Required ];
