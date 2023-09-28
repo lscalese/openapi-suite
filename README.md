@@ -46,10 +46,18 @@ cd openapi-suite
 docker-compose up -d
 ```
 
+**Important** : If you use url to a specification accessible only from your network \ organization use the docker-compose that include  
+validator and converter tools instead of the default docker-compose.yml:
+```
+docker-compose --file docker-compose-with-swagger.yml up -d
+```
+
 **Note**: 
 It seems a problem could be occurs with BuildKit on Ubuntu.  
 In this case, you should use the compose plugin with the command `docker compose up -d` plugin instead of `docker-compose up -d`.  
 See the official documentation to instal compose plugin : [Install the Compose plugin | Docker Documentation](https://docs.docker.com/compose/install/linux/)  
+
+
 
 ## Usage
 
