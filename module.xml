@@ -3,11 +3,12 @@
   <Document name="openapi-suite.ZPM">
     <Module>
       <Name>openapi-suite</Name>
-      <Version>1.0.1</Version>
+      <Version>1.0.2</Version>
       <Description>ObjectScript class generator from OpenAPI specification</Description>
       <Packaging>module</Packaging>
       <SourcesRoot>src</SourcesRoot>
-      <Resource Name="dc.openapi.suite.PKG"/>
+      <Resource Name="dc.openapi.PKG"/>
+      <Resource Name="Grongier.OpenApi.PKG"/>
       <Default Name="passwordEnabled" Value="1" />
       <CSPApplication 
             SourcePath="/web"
@@ -37,18 +38,23 @@
       </Invoke>
       <Dependencies>
         <ModuleReference>
-          <Name>openapi-server-gen</Name>
-          <Version>1.0.*</Version>
-        </ModuleReference>
-        <ModuleReference>
-          <Name>openapi-client-gen</Name>
-          <Version>2.1.*</Version>
-        </ModuleReference>
-        <ModuleReference>
           <Name>io-redirect</Name>
           <Version>*</Version>
         </ModuleReference>
+        <ModuleReference>
+          <Name>sslclient</Name>
+          <Version>*</Version>
+        </ModuleReference>
+        <ModuleReference>
+          <Name>swagger-converter-cli</Name>
+          <Version>*</Version>
+        </ModuleReference>
+        <ModuleReference>
+          <Name>swagger-validator-cli</Name>
+          <Version>*</Version>
+        </ModuleReference>
       </Dependencies>
+      <SystemRequirements Version=">=2020.1" Interoperability="enabled" />
     </Module>
   </Document>
 </Export>
