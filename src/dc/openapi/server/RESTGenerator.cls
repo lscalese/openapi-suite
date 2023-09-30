@@ -38,7 +38,7 @@ Method Generate(ByRef features As %Binary) As %Status
 
     Set sc = $$$ADDSC(sc, ..GenerateModels())
 
-    If $Get(features("modelOnly")) '= 1 Quit sc
+    If $Get(features("modelOnly")) = 1 Quit sc
 
     Set sc = $$$ADDSC(sc, ..IterateOnOperation("GenerateRequestClass"))
 

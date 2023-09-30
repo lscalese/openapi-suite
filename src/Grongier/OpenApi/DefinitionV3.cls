@@ -475,6 +475,11 @@ Method GetObjectByRef(
 /// TBD: Add caching
 ClassMethod GetSpecForPackage(package As %String) As %DynamicObject
 {
+    Set srvGenModelSpec = $Piece(package, ".", 1, *-1) _ ".Spec||OpenAPI"
+    If ##class(%Dictionary.XDataDefinition).%ExistsId(srvGenModelSpec) { ; case server gen
+        ; Todo change server generator to generate the same class structure as client generator
+        Return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(srvGenModelSpec).Data)
+    }
     return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(package _ ".spec||OpenAPI").Data)
 }
 

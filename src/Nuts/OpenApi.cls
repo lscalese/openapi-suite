@@ -38,6 +38,8 @@ ClassMethod DeleteAll()
     For pkg = "Nuts.Api.Common", "Nuts.Api.DidManager", "Nuts.Api.Crypto","Nuts.Api.Vcr", "Nuts.Api.Vdr", "Nuts.Api.Network", "Nuts.Api.Auth", "Nuts.Api.Monitoring"{
         Do $SYSTEM.OBJ.DeletePackage(pkg)
     }
+
+    Do $SYSTEM.OBJ.DeletePackage("Nuts.ApiServer")
     Quit
 }
 
