@@ -180,7 +180,12 @@ ClassMethod GetObjectByRef(
     }
     Else {
         Set tmpObjRef =  spec
-        Set package = ""
+        ; required: the generator make Do ##class(dc.openapi.common.Utils).SetTempData("model.package", <model package name>)
+        Set package = ##class(dc.openapi.common.Utils).GetTempData("model.package")
+        
+        If package = "" {
+             do ..log($Char(9) _ "! The generator must set model.package with the package name (common.Utils:SetTempData).")
+        }
     }
 
     Set name = $Piece(reference, "/", *)
@@ -211,6 +216,11 @@ ClassMethod GetObjectByRef(
 /// TBD: Add caching
 ClassMethod GetSpecForPackage(package As %String) As %DynamicObject
 {
+    Set srvGenModelSpec = $Piece(package, ".", 1, *-1) _ ".Spec||OpenAPI"
+    If ##class(%Dictionary.XDataDefinition).%ExistsId(srvGenModelSpec) { ; case server gen
+        ; Todo change server generator to generate the same class structure as client generator
+        Return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(srvGenModelSpec).Data)
+    }
     return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(package _ ".spec||OpenAPI").Data)
 }
 
@@ -240,6 +250,28 @@ ClassMethod MergeParametersArray(
     }
 
     Quit target
+}
+
+ClassMethod SetTempData(
+	key As %String,
+	value As %String) As %Status
+{
+    Set %zTempOASGen(key) = value
+    Quit $$$OK
+}
+
+ClassMethod GetTempData(
+	key As %String,
+	default As %String = "") As %Status
+{
+    Quit $Get(%zTempOASGen(key), default)
+}
+
+ClassMethod KillTempData(key As %String = "") As %Status
+{
+    Kill:key'="" %zTempOASGen Quit $$$OK
+    Kill %zTempOASGen(key) 
+    Quit $$$OK
 }
 
 }

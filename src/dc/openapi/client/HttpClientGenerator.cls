@@ -30,6 +30,9 @@ Method %OnNew(
     Set ..httpClientClassName = ..application _ ".HttpClient"
     Set ..genericResponseClassName = ..packageResponse _ ".GenericResponse"
     Set ..superResponse = ..genericResponseClassName
+
+    Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..packageModel)
+
     Quit $$$OK
 }
 

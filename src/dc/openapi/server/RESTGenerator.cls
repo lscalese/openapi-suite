@@ -29,6 +29,8 @@ Method %OnNew(
     Set ..implClassName = ..application _ ".impl"
     Set ..specClassName = ..application _ ".Spec"
 
+    Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..packageModel)
+
     Quit sc
 }
 

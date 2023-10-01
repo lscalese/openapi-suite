@@ -22,6 +22,9 @@ Method %OnNew(
     Set ..packageModel = ..application _ "." _ ..#PKGMODEL
     Set ..packageRequest = ..application _ "." _..#PKGREQUEST
     Set ..superRequest = "Ens.Request"
+
+    Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..packageModel)
+    
     Quit $$$OK
 }
 

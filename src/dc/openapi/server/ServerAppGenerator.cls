@@ -14,6 +14,7 @@ ClassMethod Generate(
 {
     $$$zlog("Generate server-side application " _ application)
 
+    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
     Do ##class(community.utils.SSLClient).CreateSSLConfiguration("DefaultSSL")
 
     Set spec = ##class(dc.openapi.common.SpecificationLoader).AbstractSpecLoader(specification, .sc, '$Get(features("noExtRef"),0))
@@ -85,6 +86,8 @@ ClassMethod %CreateServerApplication(
     } Catch (ex) {
         Set sc = ex.AsStatus()
     }
+
+    Do ##class(dc.openapi.common.Utils).KillTempData()
 
     If $$$ISOK(sc), $Get(features("compile"), 1) {
         ; no error -> compile

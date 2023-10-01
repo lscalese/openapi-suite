@@ -39,11 +39,13 @@ Method %OnNew(
 Method GenerateClasses() As %Status
 {
     Set sc = $$$OK
-
+    
     If '..spec.%IsDefined("components") {
         Do ..log("components section is not defined.")
         Return sc
     }
+
+    Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..package) 
 
     Do ..log("Components section is defined.")
 
@@ -81,6 +83,8 @@ Method GenerateClasses() As %Status
     Set:..generateInLineModel sc = $$$ADDSC(sc, ..GenerateInLineModel())
 
     set:..compile sc = $$$ADDSC(sc, $SYSTEM.OBJ.CompilePackage(..package, ..compileFlags))
+
+    Do ##class(dc.openapi.common.Utils).KillTempData("model.package")
 
     Quit sc
 }
@@ -419,68 +423,14 @@ Method GetObjectByRef(
 	Output name As %String,
 	Output package As %String) As %DynamicObject
 {
-    // Example references
-    //  "$ref":"#/components/schemas/ContactInformation"
-    //  "$ref":"../common/ssi_types.yaml#/components/schemas/DIDDocument"
-    // This second form can be used to point to a common package by setting ..spec.externals to 
-    // {
-    //    "../common/ssi_types.yaml": "Nuts.Api.Common.model"
-    // }
-
-
-    ; First check if externals are present, and if so, try to find object!
-    Set prefix = $PIECE(reference, "#", 1)
-    If $ISOBJECT(..spec.externals) && ($LENGTH(reference, "#") > 1) && (prefix '= "") && (..spec.externals.%Get(prefix) '= "") {
-        Set package = ..spec.externals.%Get(prefix)
-        Set tmpObjRef =  ..GetSpecForPackage(package)
-
-        if tmpObjRef = ""
-        {
-            do ..log("Failed to load spec for package " _ package _ ", so type cannot be resolved")
-            return ""
-        }
-
-        Set reference = $PIECE(reference, "#", 2)
-    }
-    Else {
-        Set tmpObjRef =  ..spec
-        Set package = ..package
-    }
-
-    Set name = $Piece(reference, "/", *)
-
-    For i=2:1:$Length(reference, "/") {
-        Set tmpObjRef = tmpObjRef.%Get($Piece(reference, "/", i))
-        Quit:tmpObjRef=""
-    }
-
-    ; strip name 
-    Set name = $zstrip(name,"*P")
-
-    // Make sure that local synonyms for common objects are properly resolved!
-
-    If ($ISOBJECT(tmpObjRef)) && (tmpObjRef."$ref" '= "") {
-        // change to the linked common object!
-        do ..log($Char(9) _ "! found local synonym named " _ name _ " referring to """ _ reference _ "")
-        set tmpObjRef = ..GetObjectByRef(tmpObjRef."$ref", .name, .package)
-        do ..log($Char(9) _ "! Found object in package " _ package)
-    }
-
-    Do:'$ISOBJECT(tmpObjRef) ..log($Char(9) _ "! reference : """ _ reference _ """ not found.")
-
-    Quit tmpObjRef
+    ; required : Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..package)
+    Quit ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, reference, .name, .package)
 }
 
-/// Get spec for Package
-/// TBD: Add caching
-ClassMethod GetSpecForPackage(package As %String) As %DynamicObject
+/// Replaced by ##class(dc.openapi.common.Utils).GetSpecForPackage
+ClassMethod GetSpecForPackage(package As %String) As %DynamicObject [ CodeMode = expression ]
 {
-    Set srvGenModelSpec = $Piece(package, ".", 1, *-1) _ ".Spec||OpenAPI"
-    If ##class(%Dictionary.XDataDefinition).%ExistsId(srvGenModelSpec) { ; case server gen
-        ; Todo change server generator to generate the same class structure as client generator
-        Return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(srvGenModelSpec).Data)
-    }
-    return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(package _ ".spec||OpenAPI").Data)
+##class(dc.openapi.common.Utils).GetSpecForPackage(package)
 }
 
 ClassMethod CreateClassDefInstance(
