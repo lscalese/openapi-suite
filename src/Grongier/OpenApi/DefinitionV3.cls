@@ -84,8 +84,6 @@ Method GenerateClasses() As %Status
 
     set:..compile sc = $$$ADDSC(sc, $SYSTEM.OBJ.CompilePackage(..package, ..compileFlags))
 
-    Do ##class(dc.openapi.common.Utils).KillTempData("model.package")
-
     Quit sc
 }
 
