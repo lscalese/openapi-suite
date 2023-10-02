@@ -14,6 +14,7 @@ It includes :
 * openapi-client-gen [OEX link](https://openexchange.intersystems.com/package/Open-API-Client-Gen)
 * openapi-common-lib [OEX link](https://openexchange.intersystems.com/package/openapi-common-lib)
 
+
 The following features are available : 
 
 * Web interface to generate the code.  
@@ -30,7 +31,7 @@ OpenAPI-suite can generate code :
 ## Installation ZPM
 
 
-```
+```objectscript
 zpm "install openapi-suite"
 ; optional
 zpm "install swagger-ui"
@@ -38,7 +39,7 @@ zpm "install swagger-ui"
 
 ## Installation docker
 
-```
+```bash
 git clone git@github.com:lscalese/openapi-suite.git
 cd openapi-suite
 # in case of permission issue with iris-main.log
@@ -48,7 +49,8 @@ docker-compose up -d
 
 **Important** : If you use url to a specification accessible only from your network \ organization use the docker-compose that include  
 validator and converter tools instead of the default docker-compose.yml:
-```
+
+```bash
 docker-compose --file docker-compose-with-swagger.yml up -d
 ```
 
@@ -89,24 +91,67 @@ All code snipets are available in the class [dc.openapi.suite.samples.PetStore](
 
 ### Simple HTTP client
 
-```
-Set packageName = "petstoreclient"
-Set features("simpleHttpClientOnly") = 1
-Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json", .features)
+```objectscript
+Set sc = ##class(dc.openapi.suite.Generate).Client("petstore.client", "https://petstore3.swagger.io/api/v3/openapi.json")
 ```
 
 ### Production client
 
-```
-Set packageName = "petstoreproduction"
-Set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, "https://petstore3.swagger.io/api/v3/openapi.json")
+```objectscript
+Set sc = ##class(dc.openapi.suite.Generate).ProductionClient("petstore.production","https://petstore3.swagger.io/api/v3/openapi.json")
 ```
 
 ### Rest server-side classes
 
+```objectscript
+Set sc = ##class(dc.openapi.suite.Generate).Server("petstore.server", "https://petstore3.swagger.io/api/v3/openapi.json")
 ```
-Set packageName = "petstoreserver", webApplication = "/petstore/api"
-Set sc = ##class(dc.openapi.server.ServerAppGenerator).Generate("petstoreserver", "https://petstore3.swagger.io/api/v3/openapi.json", webApplication)
+
+### Code generation with a specification contains external references
+
+If the input of your specification is a URL, the parser will resolve automatically external references like: 
+
+```json
+{
+    "didDocument":{
+        "$ref":"../common/ssi_types.yaml#/components/schemas/DIDDocument"
+    }
+}
+```
+
+Howewer, the name of the model is auto generated and there is way to have a better result.  
+Start to generate models from the referenced specification, then map the "$ref" with the `model` package before generate your app, example:  
+
+```objectscript
+; Generate models from referenced specification
+Set sc = ##class(dc.openapi.suite.Generate).Models("Nuts.Api.Common", "https://nuts-node.readthedocs.io/en/stable/_static/common/ssi_types.yaml")
+
+; Set a mapping specifcation - models
+Set externals =  {"../common/ssi_types.yaml": "Nuts.Api.Common.model"}
+
+; Generate your application with a mapping model for external references.
+Set sc = ##class(dc.openapi.suite.Generate).Server("Nuts.ApiServer.DidManager", "https://nuts-node.readthedocs.io/en/stable/_static/didman/v1.yaml", , externals)
+
+```
+
+**Note:** *If you use a filepath instead of a URL, the solution above is the only way.*
+
+### The `features` argument
+
+The code generation methods described above can take 3rd argument `features`, this is an array with the following supported key-value:
+
+```objectscript
+Set features("noExtRef") = 1    ; avoid resolving external references by the parser.
+
+; The following key\value make sense for ProductionClient generator:
+;
+Set features("noBS") = 1        ; no business service class generation
+Set features("noBP") = 1        ; no business process class generation
+Set features("noUtils") = 1     ; no utils class generation
+
+; Example:
+;
+Set sc = ##class(dc.openapi.suite.Generate).ProductionClient("petstore.production","https://petstore3.swagger.io/api/v3/openapi.json", .features)
 ```
 
 ## Developer community article
