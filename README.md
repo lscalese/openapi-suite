@@ -160,7 +160,7 @@ More information about OpenAPI-suite are available on this [developer community 
 
 ## Troubleshoot
 
-Due to many change, recently you could experienced issue with your environment (zpm install error, problem to generate from an URL).  
+Due to many changes, recently you could experienced issue with your environment (zpm install error, problem to generate from an URL).  
 Before creating an issue please try this procedure to have a clean install and try again:  
 
 ```objectscript
