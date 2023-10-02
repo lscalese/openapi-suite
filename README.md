@@ -170,6 +170,8 @@ zpm "uninstall openapi-client-gen"
 zpm "uninstall openapi-server-gen"
 zpm "uninstall swagger-validator-cli"
 zpm "uninstall swagger-converter-cli"
+zpm "uninstall openapi-suite"
+
 
 zpm "install openapi-suite"
 ```
