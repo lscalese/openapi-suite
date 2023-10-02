@@ -157,3 +157,19 @@ Set sc = ##class(dc.openapi.suite.Generate).ProductionClient("petstore.productio
 ## Developer community article
 
 More information about OpenAPI-suite are available on this [developer community article](https://community.intersystems.com/post/openapi-suite).  
+
+## Troubleshoot
+
+Due to many change, recently you could experienced issue with your environment (zpm install error, problem to generate from an URL).  
+Before creating an issue please try this procedure to have a clean install and try again:  
+
+```objectscript
+zpm "uninstall objectscript-openapi-definition"
+zpm "uninstall openapi-common-lib"
+zpm "uninstall openapi-client-gen"
+zpm "uninstall openapi-server-gen"
+zpm "uninstall swagger-validator-cli"
+zpm "uninstall swagger-converter-cli"
+
+zpm "install openapi-suite"
+```
