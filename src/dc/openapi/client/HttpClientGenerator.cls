@@ -18,9 +18,7 @@ Property superGenericResponse As %String [ InitialExpression = "%RegisteredObjec
 
 Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
 
-Method %OnNew(
-	specification As %DynamicObject,
-	application As %String) As %Status
+Method %OnNew(specification As %DynamicObject, application As %String) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -80,11 +78,7 @@ Method GenerateModels() As %Status
     Quit sc
 }
 
-Method GenerateLoadHttpRequestObject(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     #dim propDef As %Dictionary.PropertyDefinition
     Set sc = $$$OK
@@ -357,11 +351,7 @@ Method httpClientClass() As %Status [ Private ]
 }
 
 /// Generate method that execute the http request for a service into the HttpClient class
-Method GenerateMethodExecutor(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     Set classDef = ##class(%Dictionary.ClassDefinition).%OpenId(..httpClientClassName,, .sc)
@@ -391,11 +381,7 @@ Method GenerateMethodExecutor(
     Quit classDef.%Save()
 }
 
-Method GenerateResponseClass(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
 
@@ -446,9 +432,9 @@ Method GenerateResponseClass(
                     Set propertyToGen(k1, 1, "description") = $Get(propertyToGen(k1, 1, "description"))
                         _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
                 } Else { ;inline array data type
-                    Set k1 = "%DynamicArray"
-                    Set propertyToGen(k1, 0) = "ResponseArray"
-                    Set propertyToGen(k1, 0, "description") = $Get(propertyToGen(k1, 0, "description"))
+                    Set k1 = ##class(Grongier.OpenApi.DefinitionV3).GetObjectScriptType(contentTypeItem.schema.items.type, contentTypeItem.schema.items.format)
+                    Set propertyToGen(k1, 1) = "ListOf" _ $$$zNormalizeClassName(k1)
+                    Set propertyToGen(k1, 1, "description") = $Get(propertyToGen(k1, 1, "description"))
                         _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
                 }
             }
@@ -469,6 +455,10 @@ Method GenerateResponseClass(
             Set propDef.Type = key
             Set propDef.Description = $Get(propertyToGen(key, i, "description"))
             Set:i=1 propDef.Collection = "list"
+            if key = "%String"
+            {
+                do propDef.Parameters.SetAt("", "MAXLEN")                                
+            }
             Do:$Data(propertyToGen(key, i, "XMLNAME"),xmlName) propDef.Parameters.SetAt(xmlName, "XMLNAME")
             $$$zlog($Char(9) _ "+ Add property " _ propertyName)
             Do classDef.Properties.Insert(propDef)
@@ -481,11 +471,7 @@ Method GenerateResponseClass(
     Quit sc
 }
 
-Method GenerateLoadFromResponse(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
@@ -560,14 +546,19 @@ Method GenerateLoadFromResponse(
                     Set ref = ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, contentTypeItem.schema.items."$ref", .refName, .package)
                     Set k1 = $Select(package="":..packageModel,1:package) _ "." _ $$$zNormalizeClassName(refName)
                 }
- 
+                Else {
+                    Set refName = ##class(Grongier.OpenApi.DefinitionV3).GetObjectScriptType(contentTypeItem.schema.items.type, contentTypeItem.schema.items.format)
+                    Set k1 = "%ListOfDataTypes"
+                }
+
                 Do methodDef.Implementation.WriteLine( $Char(9) _ "If $$$LOWER($Piece(httpResponse.ContentType,"";"",1))=""" _ contentType _ """,httpResponse.StatusCode = """ _ $tr(code,"""") _ """ {")
 
                 ;If contentType = "application/json", contentTypeItem.schema.%IsDefined("items"), contentTypeItem.schema.items.type = "string" { ;inline array
-                If contentType = "application/json", 'contentTypeItem.schema.items.%IsDefined("$ref") { ;inline array
-                    Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set ..ResponseArray = [].%FromJSON(httpResponse.Data)")
-                    Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
-                } ElseIf contentType = "application/json" {
+                #; If contentType = "application/json", 'contentTypeItem.schema.items.%IsDefined("$ref") { ;inline array
+                #;     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set ..ResponseArray = [].%FromJSON(httpResponse.Data)")
+                #;     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
+                #; } Else
+                If contentType = "application/json" {
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set array = [].%FromJSON(httpResponse.Data), iterator = array.%GetIterator()")
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "While iterator.%GetNext(.index, .item) {")
                     Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Set obj = ##class("_k1 _").%New()")
