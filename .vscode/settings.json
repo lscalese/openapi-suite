@@ -4,21 +4,9 @@
         "Dockerfile*": "dockerfile",
         "iris.script": "objectscript"
       },
-    "objectscript.conn" :{
-      "active": true,
-      "ns": "IRISAPP",
-      "username": "_SYSTEM",
-      "password": "SYS",
-      "docker-compose": {
-        "service": "iris",
-        "internalPort": 52773
-      },
-      "links": {
-        "UnitTest Portal": "${serverUrl}/csp/sys/%25UnitTest.Portal.Home.cls?$NAMESPACE=IRISAPP",
-        "Production Portal": "${serverUrl}/csp/irisapp/EnsPortal.ProductionConfig.zen?$NAMESPACE=IRISAPP&$NAMESPACE=IRISAPP&",
-        "OpenAPI Suite UI": "${serverUrl}/openapisuite/ui/index.csp?"
+      "objectscript.conn": {
+        "server": "samples-fhir-docker",
+        "ns": "NUTS",
+        "active": true
       }
-    },
-    "workbench.colorTheme": "InterSystems Default Dark"
-
 }
