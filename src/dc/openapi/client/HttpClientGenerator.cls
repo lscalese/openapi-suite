@@ -545,10 +545,11 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
                 If contentTypeItem.schema.items.%IsDefined("$ref") {
                     Set ref = ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, contentTypeItem.schema.items."$ref", .refName, .package)
                     Set k1 = $Select(package="":..packageModel,1:package) _ "." _ $$$zNormalizeClassName(refName)
-                }
+                    set isObject = 1                }
                 Else {
                     Set refName = ##class(Grongier.OpenApi.DefinitionV3).GetObjectScriptType(contentTypeItem.schema.items.type, contentTypeItem.schema.items.format)
                     Set k1 = "%ListOfDataTypes"
+                    set isObject = 0
                 }
 
                 Do methodDef.Implementation.WriteLine( $Char(9) _ "If $$$LOWER($Piece(httpResponse.ContentType,"";"",1))=""" _ contentType _ """,httpResponse.StatusCode = """ _ $tr(code,"""") _ """ {")
@@ -561,8 +562,15 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
                 If contentType = "application/json" {
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set array = [].%FromJSON(httpResponse.Data), iterator = array.%GetIterator()")
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "While iterator.%GetNext(.index, .item) {")
-                    Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Set obj = ##class("_k1 _").%New()")
-                    Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Do obj.%JSONImport(item), ..ListOf" _ $$$zNormalizeClassName(refName) _ ".Insert(obj)")
+                    If isObject
+                    {
+                        Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Set obj = ##class("_k1 _").%New()")
+                        Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Do obj.%JSONImport(item), ..ListOf" _ $$$zNormalizeClassName(refName) _ ".Insert(obj)")
+                    }
+                    Else
+                    {
+                        Do methodDef.Implementation.WriteLine( $Char(9,9,9) _ "Do ..ListOf" _ $$$zNormalizeClassName(refName) _ ".Insert(item)")
+                    }
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "}")
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
                 } ElseIf contentType = "application/xml" {
