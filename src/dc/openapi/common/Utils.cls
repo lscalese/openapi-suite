@@ -145,6 +145,8 @@ ClassMethod CommonSchemaProcessForFlatteSpec(
         Set propDef.Type = $$$GetObjectScriptType(schema.type,schema.format)
     }
 
+    If propDef.Type = "%String" Do propDef.Parameters.SetAt("","MAXLEN"), propDef.%SetModified(1)
+    
     Do classDef.Properties.Insert(propDef)
 
     Quit sc

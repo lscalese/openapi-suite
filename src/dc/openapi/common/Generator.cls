@@ -82,7 +82,11 @@ Method IterateOnResponses(callBackMethod As %String) As %Status [ Private ]
     Quit sc
 }
 
-Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
+Method GenerateRequestClass(
+	path As %String,
+	pathItem As %DynamicObject,
+	method As %String,
+	operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
@@ -114,22 +118,29 @@ Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method 
     Set propertyName = "%ContentType", propDef = $$$FindPropertyName(classDef, propertyName)
     Set:'$IsObject(propDef) propDef = ##class(%Dictionary.PropertyDefinition).%New(classDef.Name _ ":" _ propertyName )
     Set propDef.Type = "%String"
+    $$$zlog($Char(9) _ "+ SET MAXLEN " _ propertyName)
+    Do propDef.Parameters.SetAt("","MAXLEN")
     $$$zlog($Char(9) _ "+ Add property " _ propertyName)
     Do classDef.Properties.Insert(propDef)
 
-    /// Add property contentType (accept http header)
+    /// Add property %Consume (accept http header)
     Set propertyName = "%Consume", propDef = $$$FindPropertyName(classDef, propertyName)
     Set:'$IsObject(propDef) propDef = ##class(%Dictionary.PropertyDefinition).%New(classDef.Name _ ":" _ propertyName )
     Set propDef.Type = "%String"
+    $$$zlog($Char(9) _ "+ SET MAXLEN " _ propertyName)
+    Do propDef.Parameters.SetAt("","MAXLEN")
     $$$zlog($Char(9) _ "+ Add property " _ propertyName)
     Do classDef.Properties.Insert(propDef)
 
-    /// Add property contentType
+    /// Add property %URL
     Set propertyName = "%URL", propDef = $$$FindPropertyName(classDef, propertyName)
     Set:'$IsObject(propDef) propDef = ##class(%Dictionary.PropertyDefinition).%New(classDef.Name _ ":" _ propertyName )
     Set propDef.Type = "%String", propDef.InitialExpression = "..#URL"
+    $$$zlog($Char(9) _ "+ SET MAXLEN " _ propertyName)
+    Do propDef.Parameters.SetAt("","MAXLEN")
     $$$zlog($Char(9) _ "+ Add property " _ propertyName)
     Do classDef.Properties.Insert(propDef)
+    
 
     ; If parameters array is defined in path and also in the operation,
     ; We merge these array.
@@ -150,14 +161,18 @@ Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method 
         Set:'$IsObject(propDef) propDef = ##class(%Dictionary.PropertyDefinition).%New(classDef.Name _ ":" _ $$$NormalizePropertyParamName(parameter.in_parameter.name))
 
         Set propDef.Description = $REPLACE($ZSTRIP($ZSTRIP(parameter.description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
-
+        
         If 'parameter.%IsDefined("schema") {
             Set propDef.Type = "%String"
+            $$$zlog($Char(9) _ "+ SET MAXLEN " _ propDef.Name)
+            Do propDef.Parameters.SetAt("","MAXLEN")
+            Do propDef.%SetModified(1)
             Do classDef.Properties.Insert(propDef)
             Continue
         }
 
         Set sc = $$$ADDSC(sc, ##class(dc.openapi.common.Utils).CommonSchemaProcessForFlatteSpec(classDef, propDef, parameter.schema, ..packageModel, ..spec))
+        If propDef.Type = "%String" Do propDef.Parameters.SetAt("","MAXLEN"), propDef.%SetModified(1)
 
     }
     If $IsObject(operation.requestBody), operation.requestBody.%IsDefined("$ref") {
@@ -180,6 +195,8 @@ Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method 
         }
         Set propDef.Description = propertyItem.Description
 
+        If propDef.Type = "%String" Do propDef.Parameters.SetAt("","MAXLEN")
+
         Do ..GetXmlParameters(..spec, propertyItem.schema, .xmlTagName, .xmlItemName)
 
         Do:xmlTagName'="" propDef.Parameters.SetAt(xmlTagName, "XMLNAME")
@@ -194,7 +211,10 @@ Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method 
     Quit sc
 }
 
-ClassMethod CheckAndGenerateOperationId(method As %String, operation As %DynamicObject, path As %String) As %Status
+ClassMethod CheckAndGenerateOperationId(
+	method As %String,
+	operation As %DynamicObject,
+	path As %String) As %Status
 {
     If operation.operationId = "" { ; In order to ease the code generation, we generate an operationId
     
@@ -211,7 +231,9 @@ ClassMethod CheckAndGenerateOperationId(method As %String, operation As %Dynamic
     Quit $$$OK
 }
 
-ClassMethod GetOperationParameters(pathItem As %DynamicObject, operation As %DynamicObject) As %DynamicArray
+ClassMethod GetOperationParameters(
+	pathItem As %DynamicObject,
+	operation As %DynamicObject) As %DynamicArray
 {
     #dim parameters As %DynamicArray = []
 
@@ -274,7 +296,9 @@ ClassMethod RequestBodyHelper(contentDefinition As %DynamicObject) As %DynamicOb
     Quit bodyDef
 }
 
-ClassMethod isBodyProperty(propertyName As %String, operation As %DynamicObject) As %Boolean
+ClassMethod isBodyProperty(
+	propertyName As %String,
+	operation As %DynamicObject) As %Boolean
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit $$$NO
 
@@ -283,7 +307,9 @@ ClassMethod isBodyProperty(propertyName As %String, operation As %DynamicObject)
     Quit helperObj.%IsDefined(propertyName)
 }
 
-ClassMethod GetContentTypeListForProperty(propertyName, operation As %DynamicObject) As %String
+ClassMethod GetContentTypeListForProperty(
+	propertyName,
+	operation As %DynamicObject) As %String
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit ""
 
@@ -300,7 +326,11 @@ ClassMethod GetContentTypeListForProperty(propertyName, operation As %DynamicObj
     Quit $Extract(list, 2, *)
 }
 
-ClassMethod GetXmlParameters(spec As %DynamicObject, schema As %DynamicObject, Output xmlName, Output xmlItemName)
+ClassMethod GetXmlParameters(
+	spec As %DynamicObject,
+	schema As %DynamicObject,
+	Output xmlName,
+	Output xmlItemName)
 {
     Set (xmlName, xmlItemName) = ""
 
