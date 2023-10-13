@@ -13,9 +13,7 @@ Property productionClassName As %String [ InitialExpression = "Production" ];
 
 Property tmp As %Binary [ MultiDimensional ];
 
-Method %OnNew(
-	specification As %DynamicObject,
-	application As %String) As %Status
+Method %OnNew(specification As %DynamicObject, application As %String) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -40,14 +38,14 @@ Method Generate(ByRef features) As %Status
 
     Set sc = $$$ADDSC(sc, httpClientGenerator.GenerateClient(.features))
 
-    If $Get(features("noBS")) '= 1 {
-        ; Generate Business services
-        Set sc = $$$ADDSC(sc, ..IterateOnOperation("GenerateBusinessService"))
+    If $Get(features("noBP")) '= 1 {
+        ; Generate Business process
+        Set sc = $$$ADDSC(sc, ..GenerateBusinessProcess())
     }
 
     If $Get(features("noBS")) '= 1 {
-        ; Generate Business process
-        Set sc = $$$ADDSC(sc, ..GenerateBusinessProcess())
+        ; Generate Business services
+        Set sc = $$$ADDSC(sc, ..IterateOnOperation("GenerateBusinessService"))
 
         ; Generate Proxy service
         Set sc = $$$ADDSC(sc, ..GenerateProxyService())
@@ -79,11 +77,7 @@ Method Generate(ByRef features) As %Status
     Quit sc
 }
 
-Method GenerateBusinessService(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateBusinessService(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
@@ -251,11 +245,7 @@ Method GenerateBusinessOperation() As %Status
 	Return sc
 }
 
-Method GenerateMethodExecutor(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
 

@@ -82,11 +82,7 @@ Method IterateOnResponses(callBackMethod As %String) As %Status [ Private ]
     Quit sc
 }
 
-Method GenerateRequestClass(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
@@ -153,7 +149,7 @@ Method GenerateRequestClass(
         Set propDef = $$$FindPropertyName(classDef, $$$NormalizePropertyParamName(parameter.in_parameter.name))
         Set:'$IsObject(propDef) propDef = ##class(%Dictionary.PropertyDefinition).%New(classDef.Name _ ":" _ $$$NormalizePropertyParamName(parameter.in_parameter.name))
 
-        Set propDef.Description = parameter.description
+        Set propDef.Description = $REPLACE($ZSTRIP($ZSTRIP(parameter.description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
 
         If 'parameter.%IsDefined("schema") {
             Set propDef.Type = "%String"
@@ -198,10 +194,7 @@ Method GenerateRequestClass(
     Quit sc
 }
 
-ClassMethod CheckAndGenerateOperationId(
-	method As %String,
-	operation As %DynamicObject,
-	path As %String) As %Status
+ClassMethod CheckAndGenerateOperationId(method As %String, operation As %DynamicObject, path As %String) As %Status
 {
     If operation.operationId = "" { ; In order to ease the code generation, we generate an operationId
     
@@ -218,9 +211,7 @@ ClassMethod CheckAndGenerateOperationId(
     Quit $$$OK
 }
 
-ClassMethod GetOperationParameters(
-	pathItem As %DynamicObject,
-	operation As %DynamicObject) As %DynamicArray
+ClassMethod GetOperationParameters(pathItem As %DynamicObject, operation As %DynamicObject) As %DynamicArray
 {
     #dim parameters As %DynamicArray = []
 
@@ -249,7 +240,8 @@ ClassMethod RequestBodyHelper(contentDefinition As %DynamicObject) As %DynamicOb
                 Set type = "%Stream.Object", propertyName = "bodyStream"
             }
         } ElseIf contentTypeItem.schema."$ref"'="" {
-            Set propertyName = $Piece(contentTypeItem.schema."$ref", "/", *)
+            Set propertyName = $zstrip($Piece(contentTypeItem.schema."$ref", "/", *), "*P")
+            Set type = ##class(dc.openapi.common.Utils).GetTempData("model.package") _ "." _ propertyName
         }
 
         If contentTypeItem.schema.type = "array", contentTypeItem.schema.items.%IsDefined("$ref") {
@@ -282,9 +274,7 @@ ClassMethod RequestBodyHelper(contentDefinition As %DynamicObject) As %DynamicOb
     Quit bodyDef
 }
 
-ClassMethod isBodyProperty(
-	propertyName As %String,
-	operation As %DynamicObject) As %Boolean
+ClassMethod isBodyProperty(propertyName As %String, operation As %DynamicObject) As %Boolean
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit $$$NO
 
@@ -293,9 +283,7 @@ ClassMethod isBodyProperty(
     Quit helperObj.%IsDefined(propertyName)
 }
 
-ClassMethod GetContentTypeListForProperty(
-	propertyName,
-	operation As %DynamicObject) As %String
+ClassMethod GetContentTypeListForProperty(propertyName, operation As %DynamicObject) As %String
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit ""
 
@@ -312,11 +300,7 @@ ClassMethod GetContentTypeListForProperty(
     Quit $Extract(list, 2, *)
 }
 
-ClassMethod GetXmlParameters(
-	spec As %DynamicObject,
-	schema As %DynamicObject,
-	Output xmlName,
-	Output xmlItemName)
+ClassMethod GetXmlParameters(spec As %DynamicObject, schema As %DynamicObject, Output xmlName, Output xmlItemName)
 {
     Set (xmlName, xmlItemName) = ""
 
