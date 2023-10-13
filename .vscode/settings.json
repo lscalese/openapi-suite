@@ -5,7 +5,7 @@
         "iris.script": "objectscript"
       },
     "objectscript.conn" :{
-      "active": true,
+      "active": false,
       "ns": "IRISAPP",
       "username": "_SYSTEM",
       "password": "SYS",
@@ -19,6 +19,7 @@
         "OpenAPI Suite UI": "${serverUrl}/openapisuite/ui/index.csp?"
       }
     },
-    "workbench.colorTheme": "InterSystems Default Dark"
+    "workbench.colorTheme": "InterSystems Default Dark",
+    "openapi.tryit.insecureSslHostnames": []
 
 }

@@ -1,4 +1,4 @@
 .DS_Store
 iris-main.log
 .vscode
-.vscode/
+.vscode/settings.json
