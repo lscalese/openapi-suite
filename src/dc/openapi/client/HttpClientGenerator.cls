@@ -18,9 +18,13 @@ Property superGenericResponse As %String [ InitialExpression = "%RegisteredObjec
 
 Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
 
-Method %OnNew(
-	specification As %DynamicObject,
-	application As %String) As %Status
+/// Remember when logic for content-type = "application/x-www-form-urlencoded" has been added
+Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
+
+/// Common-package - of requested through features!
+Property CommonPackage As %String;
+
+Method %OnNew(specification As %DynamicObject, application As %String) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -38,6 +42,13 @@ Method %OnNew(
 
 Method GenerateClient(ByRef features) As %Status
 {
+    set ..CommonPackage = features("common-package")
+
+    if ..CommonPackage = ""
+    {
+        set ..CommonPackage = ..application        
+    }
+
     Set sc = ..GenerateModels()
     
     If $Get(features("modelOnly")) '= 1 {
@@ -63,6 +74,22 @@ Method GenerateClient(ByRef features) As %Status
 
     Set sc = $$$ADDSC(sc, ##class(dc.openapi.common.Utils).ForceNotDefinedMAXLEN( ..application _ ".model"))
     
+    // Generate utility for content-type =  "application/x-www-form-urlencoded"
+    if ..DoGenerateUrlEncodedRequest
+    {
+        Set utilsClass = ..CommonPackage _ ".util.UrlEncodedRequest"
+
+        If '$$$defClassDefined(utilsClass) {    ;copy utils class to the target package
+        
+            Set clsUtils = ##class(%Dictionary.ClassDefinition).%OpenId("dc.openapi.client.UrlEncodedRequest").%ConstructClone()
+            Set clsUtils.Name = utilsClass
+            
+            Set sc = $$$ADDSC(sc, clsUtils.%Save())
+            ; class copy, explicit compile is required
+            Set sc = $$$ADDSC(sc, $SYSTEM.OBJ.Compile(utilsClass, "ck-d"))
+        }
+    }
+
     Quit sc
 }
 
@@ -80,11 +107,7 @@ Method GenerateModels() As %Status
     Quit sc
 }
 
-Method GenerateLoadHttpRequestObject(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     #dim propDef As %Dictionary.PropertyDefinition
     Set sc = $$$OK
@@ -162,7 +185,7 @@ Method GenerateLoadHttpRequestObject(
         }
 
     }
-    
+
 
     If '$ISOBJECT(operation.requestBody)||'$ISOBJECT(operation.requestBody.content) {
         Do methodDef.Implementation.WriteLine( $Char(9) _ "Quit sc")
@@ -219,9 +242,15 @@ Method GenerateLoadHttpRequestObject(
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do array.%ToJSON(httpRequest.EntityBody)")
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
                 } Else {
-                    Set line = condition _ " Do ..%1.%JSONExportToStream(httpRequest.EntityBody)"
+                                        Set line = condition _ " Do ..%1.%JSONExportToStream(httpRequest.EntityBody)"
                     Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
                 }
+
+            } ElseIf $$$LOWER(contentType) [ "application/x-www-form-urlencoded" {
+                $$$zlog($Char(9) _"+ generating code for " _ contentType)
+                set ..DoGenerateUrlEncodedRequest = 1 // The common helper class must be generated!
+                Set line = condition _ " Do ##class(" _ ..CommonPackage _ ".util.UrlEncodedRequest).ConvertJson2Stream(..%1, httpRequest.EntityBody)"
+                Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
 
             } ElseIf $$$LOWER(contentType) [ "application/xml" {
 
@@ -273,16 +302,6 @@ Method GenerateLoadHttpRequestObject(
 
     }
 
-    ; https://github.com/lscalese/openapi-suite/issues/19
-    Set propertyContentType = ##class(%Dictionary.PropertyDefinition).%OpenId(classDef.%Id()_"||%ContentType")
-    If $IsObject(propertyContentType) { ; set by default application/json to %ContentType property or the first content type found.
-        If setDefaultContentType > 0 { 
-            Set firstCT = $Order(setDefaultContentType(""), 1, ct)
-            Set propertyContentType.InitialExpression = """"_ct_""""
-            Do propertyContentType.%Save()
-        }
-    }
-
     If $Get(mWriter, 0) {
         Do methodDef.Implementation.WriteLine( $Char(9) _ "If $IsObject($Get(mParts)) { ; Perform only if a file is attached.")
         Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set mimeWriter = ##class(%Net.MIMEWriter).%New()")
@@ -295,6 +314,16 @@ Method GenerateLoadHttpRequestObject(
 
     Do methodDef.Implementation.WriteLine( $Char(9) _ "Quit sc")
     Set sc = classDef.%Save()
+
+    ; https://github.com/lscalese/openapi-suite/issues/19
+    Set propertyContentType = ##class(%Dictionary.PropertyDefinition).%OpenId(classDef.%Id()_"||%ContentType")
+    If $IsObject(propertyContentType) { ; set by default application/json to %ContentType property or the first content type found.
+        If setDefaultContentType > 0 { 
+            Set firstCT = $Order(setDefaultContentType(""), 1, ct)
+            Set propertyContentType.InitialExpression = """"_ct_""""
+            Do propertyContentType.%Save()
+        }
+    }
 
     Quit sc
 }
@@ -371,11 +400,7 @@ Method httpClientClass() As %Status [ Private ]
 }
 
 /// Generate method that execute the http request for a service into the HttpClient class
-Method GenerateMethodExecutor(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     Set classDef = ##class(%Dictionary.ClassDefinition).%OpenId(..httpClientClassName,, .sc)
@@ -405,11 +430,7 @@ Method GenerateMethodExecutor(
     Quit classDef.%Save()
 }
 
-Method GenerateResponseClass(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
 
@@ -505,11 +526,7 @@ Method GenerateResponseClass(
     Quit sc
 }
 
-Method GenerateLoadFromResponse(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
