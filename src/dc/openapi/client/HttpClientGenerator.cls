@@ -171,6 +171,8 @@ Method GenerateLoadHttpRequestObject(
 
     Set bodyHelper = ..RequestBodyHelper(operation.requestBody.content), bodyHelperIterator = bodyHelper.%GetIterator()
 
+    Set setDefaultContentType = 0  ; https://github.com/lscalese/openapi-suite/issues/19
+
     While bodyHelperIterator.%GetNext(.propertyName, .propertyDetail) {
         
         Set nrmPropertyName = $$$NormalizePropertyParamName(propertyName)
@@ -185,6 +187,8 @@ Method GenerateLoadHttpRequestObject(
 
         Set ctIterator = propertyDetail.contentType.%GetIterator()
         While ctIterator.%GetNext(.key, .contentType) {
+            
+            Set:contentType'="" setDefaultContentType($i(setDefaultContentType)) = contentType ; https://github.com/lscalese/openapi-suite/issues/19
             
             Set condition = $$$FormatText("If $Piece($$$LOWER(..%ContentType),"";"",1) = ""%1""", $$$LOWER(contentType))
             
@@ -267,6 +271,16 @@ Method GenerateLoadHttpRequestObject(
 
         }
 
+    }
+
+    ; https://github.com/lscalese/openapi-suite/issues/19
+    Set propertyContentType = ##class(%Dictionary.PropertyDefinition).%OpenId(classDef.%Id()_"||%ContentType")
+    If $IsObject(propertyContentType) { ; set by default application/json to %ContentType property or the first content type found.
+        If setDefaultContentType > 0 { 
+            Set firstCT = $Order(setDefaultContentType(""), 1, ct)
+            Set propertyContentType.InitialExpression = """"_ct_""""
+            Do propertyContentType.%Save()
+        }
     }
 
     If $Get(mWriter, 0) {

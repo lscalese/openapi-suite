@@ -172,8 +172,6 @@ Method GenerateRequestClass(
         }
 
         Set sc = $$$ADDSC(sc, ##class(dc.openapi.common.Utils).CommonSchemaProcessForFlatteSpec(classDef, propDef, parameter.schema, ..packageModel, ..spec))
-        If propDef.Type = "%String" Do propDef.Parameters.SetAt("","MAXLEN"), propDef.%SetModified(1)
-
     }
     If $IsObject(operation.requestBody), operation.requestBody.%IsDefined("$ref") {
         Set refContent = ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, operation.requestBody."$ref")
