@@ -433,6 +433,8 @@ Method GenerateResponseClass(
             
             Continue:'contentTypeItem.%IsDefined("schema")
 
+            Set appendDescription = "/// "_$REPLACE($ZSTRIP($ZSTRIP(codeItem.description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
+
             If contentTypeItem.schema.%IsDefined("$ref") {
                 Set ref = ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, contentTypeItem.schema."$ref", .refName, .package)
 
@@ -442,11 +444,13 @@ Method GenerateResponseClass(
                     Set ref = ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, ref.items."$ref", .refName, .package)
                     Set propertyToGen(k1, 1) = "ListOf" _ $$$zNormalizeClassName(refName)
                     Set propertyToGen(k1, 1, "description") = $Get(propertyToGen(k1, 1, "description"))
-                        _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
+                        _ "http status code = "_code _" content-type = " _contentType_$c(10)
+                        _ appendDescription
                 } Else {
                     Set propertyToGen(k1, 0) = $$$zNormalizeClassName(refName)
                     Set propertyToGen(k1, 0, "description") = $Get(propertyToGen(k1, 0, "description"))
-                        _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
+                        _ "http status code = "_code _" content-type = " _contentType_$c(10)
+                        _ appendDescription
                     Set:$IsObject(ref.xml)&&(ref.xml.name'="") propertyToGen(k1, 0, "XMLNAME") = $Translate(ref.xml.name,"#%/\","")
                 }
 
@@ -458,12 +462,14 @@ Method GenerateResponseClass(
                     Set k1 = $Select(package="":..packageModel,1:package) _ "." _ $$$zNormalizeClassName(refName)
                     Set propertyToGen(k1, 1) = "ListOf" _$$$zNormalizeClassName(refName)
                     Set propertyToGen(k1, 1, "description") = $Get(propertyToGen(k1, 1, "description"))
-                        _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
+                        _ "http status code = "_code _" content-type = " _contentType_$c(10)
+                        _ appendDescription
                 } Else { ;inline array data type
                     Set k1 = ##class(Grongier.OpenApi.DefinitionV3).GetObjectScriptType(contentTypeItem.schema.items.type, contentTypeItem.schema.items.format)
                     Set propertyToGen(k1, 1) = "ListOf" _ $$$zNormalizeClassName(k1)
                     Set propertyToGen(k1, 1, "description") = $Get(propertyToGen(k1, 1, "description"))
-                        _ "http status code = "_code _" content-type = " _contentType_$c(13,10)
+                        _ "http status code = "_code _" content-type = " _contentType_$c(10)
+                        _ appendDescription
                 }
             }
 
