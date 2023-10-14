@@ -18,7 +18,9 @@ Property superGenericResponse As %String [ InitialExpression = "%RegisteredObjec
 
 Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
 
-Method %OnNew(specification As %DynamicObject, application As %String) As %Status
+Method %OnNew(
+	specification As %DynamicObject,
+	application As %String) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -78,7 +80,11 @@ Method GenerateModels() As %Status
     Quit sc
 }
 
-Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
+Method GenerateLoadHttpRequestObject(
+	path As %String,
+	pathItem As %DynamicObject,
+	method As %String,
+	operation As %DynamicObject) As %Status
 {
     #dim propDef As %Dictionary.PropertyDefinition
     Set sc = $$$OK
@@ -139,7 +145,7 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
             Set line = "Do httpRequest.SetHeader(""%1"", ..%2)"
             Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameter.name, parameterPropertyName ))
         } ElseIf parameter.in = "path" {
-            Set line = "Set ..%URL = $Replace(..%URL,""{%1}"", ..%2)"
+            Set line = "Set ..%URL = $Replace(..#URL,""{%1}"", ..%2)" ; https://github.com/lscalese/openapi-suite/issues/21
             Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameter.name, parameterPropertyName))
         } ElseIf parameter.in = "query" {
             If propDef.Collection '= "" {
@@ -351,7 +357,11 @@ Method httpClientClass() As %Status [ Private ]
 }
 
 /// Generate method that execute the http request for a service into the HttpClient class
-Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
+Method GenerateMethodExecutor(
+	path As %String,
+	pathItem As %DynamicObject,
+	method As %String,
+	operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     Set classDef = ##class(%Dictionary.ClassDefinition).%OpenId(..httpClientClassName,, .sc)
@@ -381,7 +391,11 @@ Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, metho
     Quit classDef.%Save()
 }
 
-Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
+Method GenerateResponseClass(
+	path As %String,
+	pathItem As %DynamicObject,
+	method As %String,
+	operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
 
@@ -471,7 +485,11 @@ Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method
     Quit sc
 }
 
-Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
+Method GenerateLoadFromResponse(
+	path As %String,
+	pathItem As %DynamicObject,
+	method As %String,
+	operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
