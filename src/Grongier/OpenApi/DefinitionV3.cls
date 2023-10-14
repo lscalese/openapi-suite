@@ -20,7 +20,12 @@ Property allowPropertyOverride As %Boolean [ InitialExpression = {$$$YES} ];
 
 Property generateInLineModel As %Boolean [ InitialExpression = {$$$NO} ];
 
-Method %OnNew(specification As %DynamicObject, package As %String, super As %String, compile As %Boolean, flags As %String) As %Status
+Method %OnNew(
+	specification As %DynamicObject,
+	package As %String,
+	super As %String,
+	compile As %Boolean,
+	flags As %String) As %Status
 {
     Set ..spec = specification, ..package = package
 
@@ -82,7 +87,9 @@ Method GenerateClasses() As %Status
     Quit sc
 }
 
-Method GenerateClassModel(schema As %DynamicObject, className As %String) As %Status
+Method GenerateClassModel(
+	schema As %DynamicObject,
+	className As %String) As %Status
 {
     Set sc = $$$OK, requiredArray = []
 
@@ -104,7 +111,9 @@ Method GenerateClassModel(schema As %DynamicObject, className As %String) As %St
     Quit sc
 }
 
-Method GenerateProperties(classDef As %Dictionary.ClassDefinition, properties As %DynamicObject) As %Status
+Method GenerateProperties(
+	classDef As %Dictionary.ClassDefinition,
+	properties As %DynamicObject) As %Status
 {
     Set sc = $$$OK
 
@@ -214,7 +223,9 @@ XMLParameters
     Quit
 }
 
-Method ManageAllOf(classDef As %Dictionary.ClassDefinition, schema As %DynamicObject) As %Status
+Method ManageAllOf(
+	classDef As %Dictionary.ClassDefinition,
+	schema As %DynamicObject) As %Status
 {
     Set sc = $$$OK, superClasses = ""
     
@@ -243,7 +254,9 @@ Method ManageAllOf(classDef As %Dictionary.ClassDefinition, schema As %DynamicOb
     Quit sc
 }
 
-Method ManageRequiredProperties(classDef As %Dictionary.ClassDefinition, requiredArray As %DynamicArray) As %Status
+Method ManageRequiredProperties(
+	classDef As %Dictionary.ClassDefinition,
+	requiredArray As %DynamicArray) As %Status
 {
     Set sc = $$$OK
 
@@ -256,7 +269,14 @@ Method ManageRequiredProperties(classDef As %Dictionary.ClassDefinition, require
             Set property = ..FindPropertyName(classDef, propertyName)
             Continue:property="" ; property not found ...
             Do ..log($Char(9) _ "  - " _ propertyName)
-            Set property.Required = $$$YES
+            
+            If ##class(dc.openapi.common.Utils).GetTempData("model.property.norequired", $$$NO) {
+                ; https://github.com/lscalese/openapi-suite/issues/17
+                Set property.Required = $$$NO
+                Set property.Description = property.Description _ $Char(10) _ "/// * This property is required."
+            } Else {
+                Set property.Required = $$$YES
+            }
         }
     }
 
@@ -359,7 +379,10 @@ parametersObject
     Quit
 }
 
-ClassMethod log(msg As %String, nl As %Boolean = {$$$YES}, dtOnNL As %Boolean = {$$$YES})
+ClassMethod log(
+	msg As %String,
+	nl As %Boolean = {$$$YES},
+	dtOnNL As %Boolean = {$$$YES})
 {
     Quit:$Get(%zverbose)=0
 
@@ -370,7 +393,9 @@ ClassMethod log(msg As %String, nl As %Boolean = {$$$YES}, dtOnNL As %Boolean = 
     Quit
 }
 
-ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = "") As %String
+ClassMethod GetObjectScriptType(
+	oaType As %DynamicObject,
+	format As %String = "") As %String
 {
 
     Quit:oaType="" "%VarString"
@@ -398,7 +423,10 @@ ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = ""
     Quit $Get(table(oaType, format), $Get(table(oaType), "%VarString" ))
 }
 
-Method GetObjectByRef(reference As %String, Output name As %String, Output package As %String) As %DynamicObject
+Method GetObjectByRef(
+	reference As %String,
+	Output name As %String,
+	Output package As %String) As %DynamicObject
 {
     ; required : Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..package)
     Quit ##class(dc.openapi.common.Utils).GetObjectByRef(..spec, reference, .name, .package)
@@ -410,7 +438,9 @@ ClassMethod GetSpecForPackage(package As %String) As %DynamicObject [ CodeMode =
 ##class(dc.openapi.common.Utils).GetSpecForPackage(package)
 }
 
-ClassMethod CreateClassDefInstance(className As %String, Output classDef As %Dictionary.ClassDefinition = "") As %Dictionary.ClassDefinition
+ClassMethod CreateClassDefInstance(
+	className As %String,
+	Output classDef As %Dictionary.ClassDefinition = "") As %Dictionary.ClassDefinition
 {
     If $$$defClassDefined(className) {
         Set sc = $$Delete^%apiOBJ(className,"-d")
@@ -429,7 +459,11 @@ ClassMethod CreateClassDefInstance(className As %String, Output classDef As %Dic
     Quit $$$OK
 }
 
-Method CommonSchemaProcess(classDef As %Dictionary.ClassDefinition, propDef As %Dictionary.PropertyDefinition, schema As %DynamicObject, name As %String) As %Status
+Method CommonSchemaProcess(
+	classDef As %Dictionary.ClassDefinition,
+	propDef As %Dictionary.PropertyDefinition,
+	schema As %DynamicObject,
+	name As %String) As %Status
 {
     Set sc = $$$OK
 
@@ -482,7 +516,9 @@ Method CommonSchemaProcess(classDef As %Dictionary.ClassDefinition, propDef As %
     Quit sc
 }
 
-ClassMethod FindPropertyName(classDefinition As %Dictionary.ClassDefinition, propertyName As %String) As %Dictionary.PropertyDefinition
+ClassMethod FindPropertyName(
+	classDefinition As %Dictionary.ClassDefinition,
+	propertyName As %String) As %Dictionary.PropertyDefinition
 {
     #dim property As %Dictionary.PropertyDefinition
     Set key = ""
@@ -498,7 +534,11 @@ ClassMethod FindPropertyName(classDefinition As %Dictionary.ClassDefinition, pro
     Return ""
 }
 
-ClassMethod GetClsNameForAnonymObject(path As %String = "", method As %String = "", name As %String = "", contentType As %String = "") As %String
+ClassMethod GetClsNameForAnonymObject(
+	path As %String = "",
+	method As %String = "",
+	name As %String = "",
+	contentType As %String = "") As %String
 {
     Quit "Z"_name _ $ZCRC(path_method_name_contentType,0)
 }

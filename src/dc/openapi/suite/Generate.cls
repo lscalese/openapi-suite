@@ -11,7 +11,10 @@ ClassMethod Client(
 {
     Set %zverbose = 1
     Set Features("simpleHttpClientOnly") = 1
-    
+
+    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
+    Do ..HandleCommonFeatures(.Features)
+
     ; If we have an external ref mapping, set noExtRef to 1
     ; It avoid validator.swagger.io to resolve external references.
     If $IsObject(ExternalRefMap), '$Data(Features("noExtRef")) Set Features("noExtRef") = 1
@@ -28,6 +31,9 @@ ClassMethod ProductionClient(
     Set %zverbose = 1
     Set Features("simpleHttpClientOnly") = 0
 
+    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
+    Do ..HandleCommonFeatures(.Features)
+
     ; If we have an external ref mapping, set noExtRef to 1
     ; It avoid validator.swagger.io to resolve external references.
     If $IsObject(ExternalRefMap), '$Data(Features("noExtRef")) Set Features("noExtRef") = 1
@@ -42,7 +48,10 @@ ClassMethod Server(
 	ExternalRefMap As %DynamicObject = "") As %Status
 {
     Set %zverbose = 1
-    
+
+    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
+    Do ..HandleCommonFeatures(.Features)
+
     ; If we have an external ref mapping, set noExtRef to 1
     ; It avoid validator.swagger.io to resolve external references.
     If $IsObject(ExternalRefMap), '$Data(Features("noExtRef")) Set Features("noExtRef") = 1
@@ -58,6 +67,8 @@ ClassMethod Models(
 {
     Set %zverbose = 1
     
+    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
+
     Set Features("simpleHttpClientOnly") = 1
     set Features("modelOnly") = 1
 
@@ -66,6 +77,14 @@ ClassMethod Models(
     If $IsObject(ExternalRefMap), '$Data(Features("noExtRef")) Set Features("noExtRef") = 1
     
     Quit ##class(dc.openapi.client.Spec).generateApp(PackageName, Specfication, .Features, ExternalRefMap)
+}
+
+ClassMethod HandleCommonFeatures(ByRef Features As %Binary) As %Status [ Internal, Private ]
+{
+    Quit:'$Data(Features) $$$OK
+    Set key = "model.property.norequired"
+    Do:$Data(Features(key),value) ##class(dc.openapi.common.Utils).SetTempData(key, value)
+    Quit $$$OK
 }
 
 }

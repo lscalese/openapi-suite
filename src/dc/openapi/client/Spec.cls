@@ -23,8 +23,6 @@ ClassMethod generateApp(
 {
     Set sc = $$$OK
     
-    Do ##class(dc.openapi.common.Utils).KillTempData() ; Kill tempory data of previous code generation
-
     Set spec = ##class(dc.openapi.common.SpecificationLoader).AbstractSpecLoader(spec, .sc, '$Get(features("noExtRef"),0))
     Quit:$$$ISERR(sc) sc
 
