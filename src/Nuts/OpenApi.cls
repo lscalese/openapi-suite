@@ -100,6 +100,8 @@ ClassMethod Generate(
 {
     set %zverbose = 1
     // We want a Production and Operation; no Business Services, Business Processes or Utils
+
+    set features("model.property.norequired")=1
     set features("noBS") = 1
     set features("noBP") = 1
     set features("noUtils") = 1
@@ -111,7 +113,8 @@ ClassMethod Generate(
         "../common/ssi_types.yaml": "Nuts.Api.Common.model"
     }
 
-    set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, url, .features, externals)
+    Set sc = ##class(dc.openapi.suite.Generate).ProductionClient(packageName, url, .features,externals)
+    ;set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, url, .features, externals)
 
     if $$$ISERR(sc)
     {
