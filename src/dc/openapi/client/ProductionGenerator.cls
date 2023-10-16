@@ -284,7 +284,7 @@ Method GenerateHandleRequestMethod() As %Status
 	Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(requestMessage.LoadHttpRequestObject(pHttpRequestIn))")
 	Do methodDef.Implementation.WriteLine( $Char(9) _ "set sc = ..Adapter.SendFormDataArray(.pHttpResponse, method, pHttpRequestIn, , , ..Adapter.URL _ requestMessage.%URL)")
     Do methodDef.Implementation.WriteLine( )
-	Do methodDef.Implementation.WriteLine( $Char(9) _ "if $$$ISERR(sc) && ($SYSTEM.Status.GetErrorCodes(sc) '= ""<Ens>ErrHTTPStatus"") {")
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "if $$$ISERR(sc) && ($SYSTEM.Status.GetErrorCodes(sc) '= $$$EnsErrHTTPStatus) {")
     Do methodDef.Implementation.WriteLine( $Char(9) _ $Char(9) _"return sc")
     Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
     Do methodDef.Implementation.WriteLine( )
