@@ -15,11 +15,7 @@ XData OpenAPI [ MimeType = application/json ]
 /// spec is the open api 2.0 specification in JSON Format<br/>
 /// It could be a stream, a dynamic object or an URL.<br/>
 /// ex: Set sc = ##class(dc.openapi.client.Spec).generateApp("petstore", "https://petstore.swagger.io:443/v2/swagger.json")
-ClassMethod generateApp(
-	appName As %String,
-	spec,
-	features As %Binary,
-	externals As %DynamicObject = "") As %Status
+ClassMethod generateApp(appName As %String, spec, features As %Binary, externals As %DynamicObject = "") As %Status
 {
     Set sc = $$$OK
     
@@ -29,12 +25,7 @@ ClassMethod generateApp(
     Return ..%CreateClientApplication(appName, spec, .features, externals)
 }
 
-ClassMethod %CreateClientApplication(
-	applicationName As %String,
-	swagger As %DynamicObject,
-	ByRef features,
-	externals As %DynamicObject,
-	Output newApplication As %Boolean) As %Status
+ClassMethod %CreateClientApplication(applicationName As %String, swagger As %DynamicObject, ByRef features, externals As %DynamicObject, Output newApplication As %Boolean) As %Status
 {
     Set sc = $$$OK
    
@@ -88,7 +79,7 @@ ClassMethod %CreateClientApplication(
         set swagger.externals = externals
 
         If ($Get(features("simpleHttpClientOnly")) = 1) || ($Get(features("modelOnly")) = 1)  {
-            Set generator = ##class(dc.openapi.client.HttpClientGenerator).%New(swagger, applicationName)
+            Set generator = ##class(dc.openapi.client.HttpClientGenerator).%New(swagger, applicationName, .features)
             Set sc = generator.GenerateClient(.features)
         } Else {
             Set generator = ##class(dc.openapi.client.ProductionGenerator).%New(swagger, applicationName)
@@ -108,9 +99,7 @@ ClassMethod %CreateClientApplication(
     Return sc
 }
 
-ClassMethod %RemoveXDataBlock(
-	cDef,
-	blockName)
+ClassMethod %RemoveXDataBlock(cDef, blockName)
 {
  	Set key = cDef.XDatas.FindObjectId(cDef.Name_"||"_blockName)
  	If (key'="") {
