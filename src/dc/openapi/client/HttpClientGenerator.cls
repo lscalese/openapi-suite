@@ -14,7 +14,7 @@ Property genericResponseClassName As %String [ Private ];
 
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
-Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
+Property superModel As %String [ InitialExpression = "%SerialObject,%JSON.Adaptor,%XML.Adaptor" ];
 
 /// Remember when logic for content-type = "application/x-www-form-urlencoded" has been added
 Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
