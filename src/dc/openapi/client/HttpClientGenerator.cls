@@ -12,8 +12,6 @@ Property httpClientClassName As %String [ Private ];
 
 Property genericResponseClassName As %String [ Private ];
 
-Property superResponse As %String [ InitialExpression = "%RegisteredObject" ];
-
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
 Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
@@ -24,7 +22,7 @@ Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
 /// Common-package - of requested through features!
 Property CommonPackage As %String;
 
-Method %OnNew(specification As %DynamicObject, application As %String) As %Status
+Method %OnNew(specification As %DynamicObject, application As %String, ByRef features) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -32,8 +30,22 @@ Method %OnNew(specification As %DynamicObject, application As %String) As %Statu
     Set ..packageRequest = ..application _ "." _..#PKGREQUEST
     Set ..packageResponse = ..application _ "." _..#PKGRESPONSE
     Set ..httpClientClassName = ..application _ ".HttpClient"
-    Set ..genericResponseClassName = ..packageResponse _ ".GenericResponse"
-    Set ..superResponse = ..genericResponseClassName
+    set ..CommonPackage = $GET(features("common-package"))
+
+    if ..CommonPackage = ""
+    {
+        set ..CommonPackage = ..application        
+        Set ..genericResponseClassName = ..packageResponse _ ".GenericResponse"
+    }
+    Else
+    {
+        // Also generate the GenericResponse in a common package!
+        Set ..genericResponseClassName = ..CommonPackage _ "." _ ..#PKGRESPONSE _ ".GenericResponse"
+    }
+
+    If $Get(features("reponse-is-text")) = 1 {
+        Do ##class(dc.openapi.common.Utils).SetTempData("reponse-is-text", 1)
+    }
 
     Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..packageModel)
 
@@ -42,13 +54,6 @@ Method %OnNew(specification As %DynamicObject, application As %String) As %Statu
 
 Method GenerateClient(ByRef features) As %Status
 {
-    set ..CommonPackage = features("common-package")
-
-    if ..CommonPackage = ""
-    {
-        set ..CommonPackage = ..application        
-    }
-
     Set sc = ..GenerateModels()
     
     If $Get(features("modelOnly")) '= 1 {
@@ -438,7 +443,7 @@ Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method
     
     #dim classDef As %Dictionary.ClassDefinition
     $$$QuitOnError(##class(dc.openapi.common.Utils).CreateClassDefInstance(className, .classDef))
-    Set classDef.Super = ..superResponse
+    Set classDef.Super = ..genericResponseClassName
     
     $$$zlog("* Generate response class " _className _" for " _ path _ " " _ method)
 
@@ -666,7 +671,7 @@ Method GenerateGenericResponse() As %Status
     #dim cDef As %Dictionary.ClassDefinition
     $$$QuitOnError(##class(dc.openapi.common.Utils).CreateClassDefInstance(className, .cDef))
 
-    ;Set cDef.Super = "%Persistent,Ens.Response"
+    Set cDef.Description = "Generic Response Class"
     Set cDef.Super = ..superGenericResponse
     Set cDef.Inheritance = "left"
     Set cDef.ProcedureBlock = $$$YES
@@ -687,7 +692,14 @@ Method GenerateGenericResponse() As %Status
 
     Set property = ##class(%Dictionary.PropertyDefinition).%New()
     Set property.Name = "body"
-    Set property.Type = "%Stream.GlobalBinary"
+
+    if ##class(dc.openapi.common.Utils).GetTempData("reponse-is-text", 1) {
+        Set property.Type = "%Stream.GlobalCharacter"
+    }
+    else {
+        Set property.Type = "%Stream.GlobalBinary"
+    }
+
     Do cDef.Properties.Insert(property)
 
     Set property = ##class(%Dictionary.PropertyDefinition).%New()

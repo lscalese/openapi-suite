@@ -30,9 +30,8 @@ Method Generate(ByRef features) As %Status
 {
     Set sc = $$$OK
     
-    Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGenerator).%New(..spec, ..application)
+    Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGenerator).%New(..spec, ..application, .features)
     Set httpClientGenerator.superRequest = ..superRequest
-    Set httpClientGenerator.superResponse = ..application _ "." _..PackageResponse() _  ".GenericResponse" ;",Ens.Response"
     Set httpClientGenerator.superModel = "%Persistent,%JSON.Adaptor,%XML.Adaptor"
     Set httpClientGenerator.superGenericResponse = "%Persistent,Ens.Response"
 
