@@ -204,6 +204,7 @@ Method GenerateBusinessOperation() As %Status
     #dim cDef As %Dictionary.ClassDefinition
     $$$QuitOnError(##class(Grongier.OpenApi.DefinitionV3).CreateClassDefInstance(className, .cDef))
     Set cDef.Super = "Ens.BusinessOperation"
+    Set cDef.Description = "Generated Business Operation"
     $$$zlog("* Generate BusinessOperation class " _ className _" ...")
 
     #dim property As %Dictionary.PropertyDefinition = ##class(%Dictionary.PropertyDefinition).%New()
@@ -220,30 +221,10 @@ Method GenerateBusinessOperation() As %Status
 
     Set sc = $$$ADDSC(sc, ..IterateOnOperation("GenerateMethodExecutor"))
 
-    /*
-    Set mDef = ##class(%Dictionary.MethodDefinition).%New()
-    Set mDef.Name = "genericProcessResponse"
-    Set mDef.FormalSpec = $$$FormatText("pRequest:%1,pResponse:%2,caller:%String,status:%Status,pHttpResponse:%Net.HttpResponse,parsedResponseClassName:%String", "Ens.Request", ..ensGenericResponseClassName)
-    Set mDef.ReturnType = "%Status"
-    Do ..genericResponseImpl(mDef) 
-    Do cDef.Methods.Insert(mDef)
-
-    
-    Set mDef = ##class(%Dictionary.MethodDefinition).%New()
-    Set mDef.Name = "GetRequest"
-    Set mDef.FormalSpec = $$$FormatText("pRequest:%1","Ens.Request")
-    Set mDef.ReturnType = "%Net.HttpRequest"
-
-    Do mDef.Implementation.WriteLine($Char(9) _"#dim pHttpRequestIn As %Net.HttpRequest = ##class(%Net.HttpRequest).%New()")
-    Do mDef.Implementation.WriteLine($Char(9) _"Do:##class(%Dictionary.CompiledProperty).%ExistsId(pRequest.%ClassName(1)_""||accept"") pHttpRequestIn.SetHeader(""accept"", pRequest.accept)")
-    Do mDef.Implementation.WriteLine($Char(9) _"Return pHttpRequestIn")
-    Do cDef.Methods.Insert(mDef)
-    */
-    
-
-	Return sc
+	Return ..GenerateHandleRequestMethod()
 }
 
+/// Generate a method for handling a single operation
 Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
@@ -254,12 +235,11 @@ Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, metho
 
     Set ..tmp("MessageMap","MessageType", requestClass) = $$$zNormalizeClassName(operation.operationId)
 
-
     Set classDef = ##class(%Dictionary.ClassDefinition).%OpenId(ensOperationClassName,, .sc)
 
     If $$$ISERR(sc) {
         $$$zlog("!cannot add executor method " _ ensOperationClassName _ " does not exist.")
-        Quit sc
+        Return sc
     }
 
     $$$zlog("+ Add method " _ operation.operationId _ " to " _ ensOperationClassName)
@@ -272,14 +252,52 @@ Method GenerateMethodExecutor(path As %String, pathItem As %DynamicObject, metho
         _ responseClass
 
     Set methodDef.ReturnType = "%Status"
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "Set sc = $$$OK, pHttpRequestIn = ##class(%Net.HttpRequest).%New(), responseMessage = ##class("_responseClass_").%New()")
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(requestMessage.LoadHttpRequestObject(pHttpRequestIn))" )
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(..Adapter.SendFormDataArray(.pHttpResponse, """_method_""", pHttpRequestIn, , , ..Adapter.URL_requestMessage.%URL))")
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(responseMessage.LoadFromResponse(pHttpResponse, """_operation.operationId_"""))")
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "Quit sc")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "set responseMessage = ##class(" _ responseClass _ ").%New()")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "return ..zzHandleRequest(requestMessage, """ _ operation.operationId _ """, """_ method _""", responseMessage)" )
     Do classDef.Methods.Insert(methodDef)
 
-    Quit classDef.%Save()
+    Return classDef.%Save()
+}
+
+/// Generate HandleRequest method
+Method GenerateHandleRequestMethod() As %Status
+{
+    Set sc = $$$OK
+
+    Set ensOperationClassName = ..application _"." _ ..#PKGOPERATION _ ".Operation"    
+
+    Set classDef = ##class(%Dictionary.ClassDefinition).%OpenId(ensOperationClassName,, .sc)
+
+    If $$$ISERR(sc) {
+        $$$zlog("!cannot add HandleRequest method; " _ ensOperationClassName _ " does not exist.")
+        Return sc
+    }
+
+    $$$zlog("+ Add method HandleRequest to " _ ensOperationClassName)
+
+    Set methodDef = ##class(%Dictionary.MethodDefinition).%New()
+    Set methodDef.Description = "Common request handler"
+    Set methodDef.Name = "zzHandleRequest"
+    Set methodDef.FormalSpec = "requestMessage:Ens.Request,name:%String,method:%String,responseMessage:Nuts.Api.Common.responses.GenericResponse"
+    Set methodDef.ReturnType = "%Status"
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "set sc = $$$OK, pHttpRequestIn = ##class(%Net.HttpRequest).%New()")
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(requestMessage.LoadHttpRequestObject(pHttpRequestIn))")
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "set sc = ..Adapter.SendFormDataArray(.pHttpResponse, method, pHttpRequestIn, , , ..Adapter.URL _ requestMessage.%URL)")
+    Do methodDef.Implementation.WriteLine( )
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "if $$$ISERR(sc) && ($SYSTEM.Status.GetErrorCodes(sc) '= ""<Ens>ErrHTTPStatus"") {")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ $Char(9) _"return sc")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
+    Do methodDef.Implementation.WriteLine( )
+	Do methodDef.Implementation.WriteLine( $Char(9) _ "if $ISOBJECT(pHttpResponse) {")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ $Char(9) _"$$$TRACE(name _"" returned "" _ pHttpResponse.StatusCode)")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ $Char(9) _"$$$QuitOnError(responseMessage.LoadFromResponse(pHttpResponse, name))")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
+    Do methodDef.Implementation.WriteLine( )
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "return sc")
+
+    Do classDef.Methods.Insert(methodDef)
+
+    Return classDef.%Save()
 }
 
 Method GenerateProxyService() As %Status
