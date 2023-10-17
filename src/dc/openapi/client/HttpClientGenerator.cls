@@ -14,7 +14,7 @@ Property genericResponseClassName As %String [ Private ];
 
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
-Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
+Property superModel As %String [ InitialExpression = "%SerialObject,%JSON.Adaptor,%XML.Adaptor" ];
 
 /// Remember when logic for content-type = "application/x-www-form-urlencoded" has been added
 Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
@@ -247,14 +247,14 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do array.%ToJSON(httpRequest.EntityBody)")
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
                 } Else {
-                                        Set line = condition _ " Do ..%1.%JSONExportToStream(httpRequest.EntityBody)"
+                    Set line = condition _ " Return ..%1.%JSONExportToStream(httpRequest.EntityBody)"
                     Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
                 }
 
             } ElseIf $$$LOWER(contentType) [ "application/x-www-form-urlencoded" {
                 $$$zlog($Char(9) _"+ generating code for " _ contentType)
                 set ..DoGenerateUrlEncodedRequest = 1 // The common helper class must be generated!
-                Set line = condition _ " Do ##class(" _ ..CommonPackage _ ".util.UrlEncodedRequest).ConvertJson2Stream(..%1, httpRequest.EntityBody)"
+                Set line = condition _ " Return ##class(" _ ..CommonPackage _ ".util.UrlEncodedRequest).ConvertJson2Stream(..%1, httpRequest.EntityBody)"
                 Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
 
             } ElseIf $$$LOWER(contentType) [ "application/xml" {
@@ -579,8 +579,7 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "If $$$LOWER($Piece(httpResponse.ContentType,"";"",1))=""" _ contentType _ """,httpResponse.StatusCode = """ _ $tr(code,"""") _ """ {")
                     If contentType = "application/json" {
                         Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set .." _ $$$zNormalizeClassName(refName) _ " = ##class("_k1 _").%New()")
-                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
-                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
+                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
                     } ElseIf contentType = "application/xml" {
                         Set xmlTagName = refName
                         
