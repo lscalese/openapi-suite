@@ -10,7 +10,7 @@ Property packageResponse As %String [ Private ];
 
 Property httpClientClassName As %String [ Private ];
 
-Property genericResponseClassName As %String [ Private ];
+Property genericResponseClassName As %String;
 
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
