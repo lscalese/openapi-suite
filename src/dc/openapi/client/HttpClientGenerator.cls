@@ -579,7 +579,8 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "If $$$LOWER($Piece(httpResponse.ContentType,"";"",1))=""" _ contentType _ """,httpResponse.StatusCode = """ _ $tr(code,"""") _ """ {")
                     If contentType = "application/json" {
                         Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set .." _ $$$zNormalizeClassName(refName) _ " = ##class("_k1 _").%New()")
-                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
+                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set ..status = .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
+                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
                     } ElseIf contentType = "application/xml" {
                         Set xmlTagName = refName
                         
@@ -708,6 +709,10 @@ Method GenerateGenericResponse() As %Status
     Do property.Parameters.SetAt(1, "TRUNCATE")
     Do cDef.Properties.Insert(property)
 
+    Set property = ##class(%Dictionary.PropertyDefinition).%New()
+    Set property.Name = "status"
+    Set property.Type = "%Status"
+    Set property.Description = "Status for parts of the response handling like JSON Parsing. " _ $Char(10) _ "/// This allows for returning the response body that will not be returned if the request fails."
     Do cDef.Properties.Insert(property)
 
     Set methodDef = ##class(%Dictionary.MethodDefinition).%New()
