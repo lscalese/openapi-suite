@@ -10,7 +10,7 @@ Property packageResponse As %String [ Private ];
 
 Property httpClientClassName As %String [ Private ];
 
-Property genericResponseClassName As %String [ Private ];
+Property genericResponseClassName As %String;
 
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
@@ -452,6 +452,17 @@ Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method
     Set codeIterator = operation.responses.%GetIterator()
     While codeIterator.%GetNext(.code, .codeItem) {
         
+        if (code = "default") && '$IsObject(codeItem.content) && (codeItem."$ref" '= "") && $ISOBJECT(..spec.externals) {
+            set type = ..spec.externals.%Get(codeItem."$ref")
+
+            if (type '= "") { // Special case of default response:
+                Set k1 = type
+                Set propertyToGen(k1, 0) = "ErrorResponse"
+                Set propertyToGen(k1, 0, "description") = code
+                Continue
+            }
+        }
+
         Continue:'$IsObject(codeItem.content)
         
         Set contentTypeIterator = codeItem.content.%GetIterator()
@@ -560,6 +571,32 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
     Set codeIterator = operation.responses.%GetIterator()
     While codeIterator.%GetNext(.code, .codeItem) {
         
+        if (code = "default") && '$IsObject(codeItem.content) {
+            if (codeItem."$ref" '= "") {
+                if $ISOBJECT(..spec.externals) {
+                    set type = ..spec.externals.%Get(codeItem."$ref")
+
+                    if (type '= "") { // Special case of default response:
+
+                        Do methodDef.Implementation.WriteLine()
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "#; default")
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "Set ..ErrorResponse = ##class(" _ type _").%New()")
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "Set ..status = ..ErrorResponse.%JSONImport(httpResponse.Data)")
+                        Continue
+                    }
+                    else {
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case with reference to; missing external type for " _ codeItem."$ref")
+                    }
+                }
+                else {
+                    Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case with reference to " _ codeItem."$ref")
+                }
+            }
+            else {
+                Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case")
+            }
+        }
+
         Continue:'$IsObject(codeItem.content)
         
         Set contentTypeIterator = codeItem.content.%GetIterator()
@@ -654,10 +691,8 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
 
             }
         }
-
     }
-
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "Quit sc")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "Return sc")
 
     Set sc = classDef.%Save()
     Quit sc

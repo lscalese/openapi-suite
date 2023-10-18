@@ -9,6 +9,8 @@ Parameter PKGOPERATION = "bo";
 
 Parameter PKGPROCESS = "bp";
 
+Property genericResponseClassName As %String [ Private ];
+
 Property productionClassName As %String [ InitialExpression = "Production" ];
 
 Property tmp As %Binary [ MultiDimensional ];
@@ -34,6 +36,7 @@ Method Generate(ByRef features) As %Status
     Set httpClientGenerator.superRequest = ..superRequest
     Set httpClientGenerator.superModel = "%SerialObject,%JSON.Adaptor,%XML.Adaptor"
     Set httpClientGenerator.superGenericResponse = "Ens.Response"
+    Set ..genericResponseClassName = httpClientGenerator.genericResponseClassName
 
     Set sc = $$$ADDSC(sc, httpClientGenerator.GenerateClient(.features))
 
@@ -278,7 +281,7 @@ Method GenerateHandleRequestMethod() As %Status
     Set methodDef = ##class(%Dictionary.MethodDefinition).%New()
     Set methodDef.Description = "Common request handler"
     Set methodDef.Name = "zzHandleRequest"
-    Set methodDef.FormalSpec = "requestMessage:Ens.Request,name:%String,method:%String,responseMessage:Nuts.Api.Common.responses.GenericResponse"
+    Set methodDef.FormalSpec = "requestMessage:Ens.Request,name:%String,method:%String,responseMessage:" _ ..genericResponseClassName
     Set methodDef.ReturnType = "%Status"
 	Do methodDef.Implementation.WriteLine( $Char(9) _ "set sc = $$$OK, pHttpRequestIn = ##class(%Net.HttpRequest).%New()")
 	Do methodDef.Implementation.WriteLine( $Char(9) _ "$$$QuitOnError(requestMessage.LoadHttpRequestObject(pHttpRequestIn))")
