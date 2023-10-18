@@ -107,9 +107,9 @@ ClassMethod Generate(packageName As %String, url As %String, modelOnly As %Boole
     // Make sure that the common model is properly referenced!
     // for e.g.  "$ref":"../common/ssi_types.yaml#/components/schemas/DIDDocument"
     set externals =  {
-        "../common/ssi_types.yaml": "Nuts.Api.Common.model"
+        "../common/ssi_types.yaml": "Nuts.Api.Common.model",
+        "../common/error_response.yaml": "Nuts.Api.Common.model.ErrorResponse"
     }
-
     set sc = ##class(dc.openapi.client.Spec).generateApp(packageName, url, .features, externals)
 
     if $$$ISERR(sc)
