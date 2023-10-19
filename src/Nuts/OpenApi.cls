@@ -93,7 +93,10 @@ ClassMethod Monitoring() As %Status
 }
 
 /// Generate API helper
-ClassMethod Generate(packageName As %String, url As %String, modelOnly As %Boolean = 0) As %Status
+ClassMethod Generate(
+	packageName As %String,
+	url As %String,
+	modelOnly As %Boolean = 0) As %Status
 {
     set %zverbose = 1
     // We want a Production and Operation; no Business Services, Business Processes or Utils
@@ -104,11 +107,13 @@ ClassMethod Generate(packageName As %String, url As %String, modelOnly As %Boole
     set features("noUtils") = 1
     set features("noExtRef") = 1    ; avoid resolving external ref by validator.swagger.io
     set features("modelOnly") = modelOnly
+    set features("reponse-is-text") = 1 // Set Response stream in Generic response as %Stream.GlobalCharacter
     set features("common-package") = "Nuts.Api.Common"
     // Make sure that the common model is properly referenced!
     // for e.g.  "$ref":"../common/ssi_types.yaml#/components/schemas/DIDDocument"
     set externals =  {
-        "../common/ssi_types.yaml": "Nuts.Api.Common.model"
+        "../common/ssi_types.yaml": "Nuts.Api.Common.model",
+        "../common/error_response.yaml": "Nuts.Api.Common.model.ErrorResponse"
     }
 
     Set sc = ##class(dc.openapi.suite.Generate).ProductionClient(packageName, url, .features,externals)
@@ -126,12 +131,16 @@ ClassMethod Generate(packageName As %String, url As %String, modelOnly As %Boole
     return sc
 }
 
-ClassMethod GenerateServer(packageName As %String, url As %String, modelOnly As %Boolean = 0) As %Status
+ClassMethod GenerateServer(
+	packageName As %String,
+	url As %String,
+	modelOnly As %Boolean = 0) As %Status
 {
     set %zverbose = 1
     // We want a Production and Operation; no Business Services, Business Processes or Utils
     set features("modelOnly") = modelOnly
     set features("noExtRef") = 1    ; avoid resolving external ref by validator.swagger.io
+    set features("reponse-is-text") = 1 // Set Response stream in Generic response as %Stream.GlobalCharacter
     set features("common-package") = "Nuts.Api.Common"
     // Make sure that the common model is properly referenced!
     // for e.g.  "$ref":"../common/ssi_types.yaml#/components/schemas/DIDDocument"

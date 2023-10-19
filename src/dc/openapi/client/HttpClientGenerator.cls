@@ -10,13 +10,11 @@ Property packageResponse As %String [ Private ];
 
 Property httpClientClassName As %String [ Private ];
 
-Property genericResponseClassName As %String [ Private ];
-
-Property superResponse As %String [ InitialExpression = "%RegisteredObject" ];
+Property genericResponseClassName As %String;
 
 Property superGenericResponse As %String [ InitialExpression = "%RegisteredObject" ];
 
-Property superModel As %String [ InitialExpression = "%JSON.Adaptor,%XML.Adaptor,%RegisteredObject" ];
+Property superModel As %String [ InitialExpression = "%SerialObject,%JSON.Adaptor,%XML.Adaptor" ];
 
 /// Remember when logic for content-type = "application/x-www-form-urlencoded" has been added
 Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
@@ -24,7 +22,7 @@ Property DoGenerateUrlEncodedRequest As %Boolean [ InitialExpression = 0 ];
 /// Common-package - of requested through features!
 Property CommonPackage As %String;
 
-Method %OnNew(specification As %DynamicObject, application As %String) As %Status
+Method %OnNew(specification As %DynamicObject, application As %String, ByRef features) As %Status
 {
     Set ..spec = specification
     Set ..application = application
@@ -32,8 +30,22 @@ Method %OnNew(specification As %DynamicObject, application As %String) As %Statu
     Set ..packageRequest = ..application _ "." _..#PKGREQUEST
     Set ..packageResponse = ..application _ "." _..#PKGRESPONSE
     Set ..httpClientClassName = ..application _ ".HttpClient"
-    Set ..genericResponseClassName = ..packageResponse _ ".GenericResponse"
-    Set ..superResponse = ..genericResponseClassName
+    set ..CommonPackage = $GET(features("common-package"))
+
+    if ..CommonPackage = ""
+    {
+        set ..CommonPackage = ..application        
+        Set ..genericResponseClassName = ..packageResponse _ ".GenericResponse"
+    }
+    Else
+    {
+        // Also generate the GenericResponse in a common package!
+        Set ..genericResponseClassName = ..CommonPackage _ "." _ ..#PKGRESPONSE _ ".GenericResponse"
+    }
+
+    If $Get(features("reponse-is-text")) = 1 {
+        Do ##class(dc.openapi.common.Utils).SetTempData("reponse-is-text", 1)
+    }
 
     Do ##class(dc.openapi.common.Utils).SetTempData("model.package", ..packageModel)
 
@@ -42,13 +54,6 @@ Method %OnNew(specification As %DynamicObject, application As %String) As %Statu
 
 Method GenerateClient(ByRef features) As %Status
 {
-    set ..CommonPackage = features("common-package")
-
-    if ..CommonPackage = ""
-    {
-        set ..CommonPackage = ..application        
-    }
-
     Set sc = ..GenerateModels()
     
     If $Get(features("modelOnly")) '= 1 {
@@ -242,14 +247,14 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
                     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do array.%ToJSON(httpRequest.EntityBody)")
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
                 } Else {
-                                        Set line = condition _ " Do ..%1.%JSONExportToStream(httpRequest.EntityBody)"
+                    Set line = condition _ " Return ..%1.%JSONExportToStream(httpRequest.EntityBody)"
                     Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
                 }
 
             } ElseIf $$$LOWER(contentType) [ "application/x-www-form-urlencoded" {
                 $$$zlog($Char(9) _"+ generating code for " _ contentType)
                 set ..DoGenerateUrlEncodedRequest = 1 // The common helper class must be generated!
-                Set line = condition _ " Do ##class(" _ ..CommonPackage _ ".util.UrlEncodedRequest).ConvertJson2Stream(..%1, httpRequest.EntityBody)"
+                Set line = condition _ " Return ##class(" _ ..CommonPackage _ ".util.UrlEncodedRequest).ConvertJson2Stream(..%1, httpRequest.EntityBody)"
                 Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, nrmPropertyName))
 
             } ElseIf $$$LOWER(contentType) [ "application/xml" {
@@ -438,7 +443,7 @@ Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method
     
     #dim classDef As %Dictionary.ClassDefinition
     $$$QuitOnError(##class(dc.openapi.common.Utils).CreateClassDefInstance(className, .classDef))
-    Set classDef.Super = ..superResponse
+    Set classDef.Super = ..genericResponseClassName
     
     $$$zlog("* Generate response class " _className _" for " _ path _ " " _ method)
 
@@ -447,6 +452,17 @@ Method GenerateResponseClass(path As %String, pathItem As %DynamicObject, method
     Set codeIterator = operation.responses.%GetIterator()
     While codeIterator.%GetNext(.code, .codeItem) {
         
+        if (code = "default") && '$IsObject(codeItem.content) && (codeItem."$ref" '= "") && $ISOBJECT(..spec.externals) {
+            set type = ..spec.externals.%Get(codeItem."$ref")
+
+            if (type '= "") { // Special case of default response:
+                Set k1 = type
+                Set propertyToGen(k1, 0) = "ErrorResponse"
+                Set propertyToGen(k1, 0, "description") = code
+                Continue
+            }
+        }
+
         Continue:'$IsObject(codeItem.content)
         
         Set contentTypeIterator = codeItem.content.%GetIterator()
@@ -555,6 +571,32 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
     Set codeIterator = operation.responses.%GetIterator()
     While codeIterator.%GetNext(.code, .codeItem) {
         
+        if (code = "default") && '$IsObject(codeItem.content) {
+            if (codeItem."$ref" '= "") {
+                if $ISOBJECT(..spec.externals) {
+                    set type = ..spec.externals.%Get(codeItem."$ref")
+
+                    if (type '= "") { // Special case of default response:
+
+                        Do methodDef.Implementation.WriteLine()
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "#; default")
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "Set ..ErrorResponse = ##class(" _ type _").%New()")
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "Set ..status = ..ErrorResponse.%JSONImport(httpResponse.Data)")
+                        Continue
+                    }
+                    else {
+                        Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case with reference to; missing external type for " _ codeItem."$ref")
+                    }
+                }
+                else {
+                    Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case with reference to " _ codeItem."$ref")
+                }
+            }
+            else {
+                Do methodDef.Implementation.WriteLine( $Char(9) _ "#; No code generated for default case")
+            }
+        }
+
         Continue:'$IsObject(codeItem.content)
         
         Set contentTypeIterator = codeItem.content.%GetIterator()
@@ -574,7 +616,7 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
                     Do methodDef.Implementation.WriteLine( $Char(9) _ "If $$$LOWER($Piece(httpResponse.ContentType,"";"",1))=""" _ contentType _ """,httpResponse.StatusCode = """ _ $tr(code,"""") _ """ {")
                     If contentType = "application/json" {
                         Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set .." _ $$$zNormalizeClassName(refName) _ " = ##class("_k1 _").%New()")
-                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
+                        Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set ..status = .." _ $$$zNormalizeClassName(refName) _ ".%JSONImport(httpResponse.Data)")
                         Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Return sc")
                     } ElseIf contentType = "application/xml" {
                         Set xmlTagName = refName
@@ -649,10 +691,8 @@ Method GenerateLoadFromResponse(path As %String, pathItem As %DynamicObject, met
 
             }
         }
-
     }
-
-    Do methodDef.Implementation.WriteLine( $Char(9) _ "Quit sc")
+    Do methodDef.Implementation.WriteLine( $Char(9) _ "Return sc")
 
     Set sc = classDef.%Save()
     Quit sc
@@ -666,7 +706,7 @@ Method GenerateGenericResponse() As %Status
     #dim cDef As %Dictionary.ClassDefinition
     $$$QuitOnError(##class(dc.openapi.common.Utils).CreateClassDefInstance(className, .cDef))
 
-    ;Set cDef.Super = "%Persistent,Ens.Response"
+    Set cDef.Description = "Generic Response Class"
     Set cDef.Super = ..superGenericResponse
     Set cDef.Inheritance = "left"
     Set cDef.ProcedureBlock = $$$YES
@@ -687,7 +727,14 @@ Method GenerateGenericResponse() As %Status
 
     Set property = ##class(%Dictionary.PropertyDefinition).%New()
     Set property.Name = "body"
-    Set property.Type = "%Stream.GlobalBinary"
+
+    if ##class(dc.openapi.common.Utils).GetTempData("reponse-is-text", 1) {
+        Set property.Type = "%Stream.GlobalCharacter"
+    }
+    else {
+        Set property.Type = "%Stream.GlobalBinary"
+    }
+
     Do cDef.Properties.Insert(property)
 
     Set property = ##class(%Dictionary.PropertyDefinition).%New()
@@ -697,6 +744,10 @@ Method GenerateGenericResponse() As %Status
     Do property.Parameters.SetAt(1, "TRUNCATE")
     Do cDef.Properties.Insert(property)
 
+    Set property = ##class(%Dictionary.PropertyDefinition).%New()
+    Set property.Name = "status"
+    Set property.Type = "%Status"
+    Set property.Description = "Status for parts of the response handling like JSON Parsing. " _ $Char(10) _ "/// This allows for returning the response body that will not be returned if the request fails."
     Do cDef.Properties.Insert(property)
 
     Set methodDef = ##class(%Dictionary.MethodDefinition).%New()
