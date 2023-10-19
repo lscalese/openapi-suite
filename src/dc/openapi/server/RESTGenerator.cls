@@ -507,10 +507,10 @@ Method AddDispMethod(
     }
 
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ $$$FormatText("Set requestMessage = ##class(%1).%New()", messageRequestClass))
+    Do:setPathParamLine'="" methodDef.Implementation.WriteLine( $Char(9,9) _ setPathParamLine)
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do requestMessage.LoadFromRequest(%request)")
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Set scValidateRequest = requestMessage.RequestValidate()")
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ "If $$$ISERR(scValidateRequest) Do ##class(%REST.Impl).%ReportRESTError(..#HTTP400BADREQUEST,$$$ERROR(5001,""Invalid requestMessage object."")) Quit")
-    Do:setPathParamLine'="" methodDef.Implementation.WriteLine( $Char(9,9) _ setPathParamLine)
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ $$$FormatText("Set response = ##class(%1).%2(requestMessage)", ..implClassName, implMethodName))
     Do methodDef.Implementation.WriteLine( $Char(9,9) _ $$$FormatText("Do ##class(%1).%WriteResponse(response)",..implClassName))
     
