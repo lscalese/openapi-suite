@@ -3,10 +3,7 @@ Include dc.openapi.common.macro
 Class dc.openapi.common.Utils
 {
 
-ClassMethod log(
-	msg As %String,
-	nl As %Boolean = {$$$YES},
-	dtOnNL As %Boolean = {$$$YES})
+ClassMethod log(msg As %String, nl As %Boolean = {$$$YES}, dtOnNL As %Boolean = {$$$YES})
 {
     Quit:$Get(%zverbose)=0
 
@@ -17,9 +14,7 @@ ClassMethod log(
     Quit
 }
 
-ClassMethod CreateClassDefInstance(
-	className As %String,
-	Output classDef As %Dictionary.ClassDefinition = "") As %Dictionary.ClassDefinition
+ClassMethod CreateClassDefInstance(className As %String, Output classDef As %Dictionary.ClassDefinition = "") As %Dictionary.ClassDefinition
 {
     If $$$defClassDefined(className) {
         Set sc = $$Delete^%apiOBJ(className,"-d")
@@ -38,9 +33,7 @@ ClassMethod CreateClassDefInstance(
     Quit $$$OK
 }
 
-ClassMethod FindPropertyName(
-	classDefinition As %Dictionary.ClassDefinition,
-	propertyName As %String) As %Dictionary.PropertyDefinition
+ClassMethod FindPropertyName(classDefinition As %Dictionary.ClassDefinition, propertyName As %String) As %Dictionary.PropertyDefinition
 {
     #dim property As %Dictionary.PropertyDefinition
     Set key = ""
@@ -56,9 +49,7 @@ ClassMethod FindPropertyName(
     Return ""
 }
 
-ClassMethod ForceNotDefinedMAXLEN(
-	package As %String,
-	maxLenValue As %String = "") As %Status
+ClassMethod ForceNotDefinedMAXLEN(package As %String, maxLenValue As %String = "") As %Status
 {
     #dim propDef As %Dictionary.PropertyDefinition
     Set sc = $$$OK, (startKey, className) = package _"."
@@ -94,9 +85,7 @@ ClassMethod packageExists(packageName As %String) As %Boolean
     Return ''packageList.Find($zcvt(packageName, "U"))
 }
 
-ClassMethod RemoveXDataBlock(
-	cDef,
-	blockName)
+ClassMethod RemoveXDataBlock(cDef, blockName)
 {
  	Set key = cDef.XDatas.FindObjectId(cDef.Name_"||"_blockName)
  	If (key'="") {
@@ -104,12 +93,13 @@ ClassMethod RemoveXDataBlock(
 	}
 }
 
-ClassMethod CommonSchemaProcessForFlatteSpec(
-	classDef As %Dictionary.ClassDefinition,
-	propDef As %Dictionary.PropertyDefinition,
-	schema As %DynamicObject,
-	package As %String,
-	specification) As %Status
+/// Is this schema an object?
+ClassMethod IsSchemaObject(schema As %DynamicObject) As %Boolean
+{
+    Return (schema.type = "object") || schema.%IsDefined("allOf") || schema.%IsDefined("properties")
+}
+
+ClassMethod CommonSchemaProcessForFlatteSpec(classDef As %Dictionary.ClassDefinition, propDef As %Dictionary.PropertyDefinition, schema As %DynamicObject, package As %String, specification) As %Status
 {
     Set sc = $$$OK
 
@@ -117,7 +107,7 @@ ClassMethod CommonSchemaProcessForFlatteSpec(
         Set schema = ..GetObjectByRef(specification, schema."$ref", .refName)
         Quit:'$IsObject(schema) sc
 
-        If schema.type = "object" {
+        If ..IsSchemaObject(schema) {
             Set propDef.Type = package _ "." _ $$$zNormalizeClassName(refName)
             Do classDef.Properties.Insert(propDef)
             Quit sc
@@ -132,7 +122,7 @@ ClassMethod CommonSchemaProcessForFlatteSpec(
             Set refObject = ..GetObjectByRef(specification, schema.items."$ref", .refName)
             Quit:'$IsObject(refObject) sc
             
-            Set propDef.Type = $Select(refObject.type="object": package _ "." _ $$$zNormalizeClassName(refName), 1: $$$GetObjectScriptType(refObject.type,refObject.format))
+            Set propDef.Type = $Select(..IsSchemaObject(refObject): package _ "." _ $$$zNormalizeClassName(refName), 1: $$$GetObjectScriptType(refObject.type,refObject.format))
             
         } Else {
 
@@ -152,11 +142,7 @@ ClassMethod CommonSchemaProcessForFlatteSpec(
     Quit sc
 }
 
-ClassMethod GetObjectByRef(
-	spec As %DynamicObject,
-	reference As %String,
-	Output name As %String,
-	Output package As %String) As %DynamicObject
+ClassMethod GetObjectByRef(spec As %DynamicObject, reference As %String, Output name As %String, Output package As %String) As %DynamicObject
 {
     // Example references
     //  "$ref":"#/components/schemas/ContactInformation"
@@ -226,9 +212,7 @@ ClassMethod GetSpecForPackage(package As %String) As %DynamicObject
     return {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId(package _ ".spec||OpenAPI").Data)
 }
 
-ClassMethod MergeParametersArray(
-	from As %DynamicArray,
-	to As %DynamicArray) As %DynamicArray
+ClassMethod MergeParametersArray(from As %DynamicArray, to As %DynamicArray) As %DynamicArray
 {
     #dim target As %DynamicArray = {}.%FromJSON(from.%ToJSON())
 
@@ -254,17 +238,13 @@ ClassMethod MergeParametersArray(
     Quit target
 }
 
-ClassMethod SetTempData(
-	key As %String,
-	value As %String) As %Status
+ClassMethod SetTempData(key As %String, value As %String) As %Status
 {
     Set %zTempOASGen(key) = value
     Quit $$$OK
 }
 
-ClassMethod GetTempData(
-	key As %String,
-	default As %String = "") As %Status
+ClassMethod GetTempData(key As %String, default As %String = "") As %Status
 {
     Quit $Get(%zTempOASGen(key), default)
 }
