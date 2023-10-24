@@ -146,6 +146,7 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
     Set parameters = ..GetOperationParameters(pathItem, operation)
 
     Set parameterIterator = parameters.%GetIterator()
+    Set url = "..#URL"        
     While parameterIterator.%GetNext(.key, .parameter) {
 
         ; parameter is a parameter object https://swagger.io/specification/#parameter-object
@@ -173,7 +174,8 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
             Set line = "Do httpRequest.SetHeader(""%1"", ..%2)"
             Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameter.name, parameterPropertyName ))
         } ElseIf parameter.in = "path" {
-            Set line = "Set ..%URL = $Replace(..#URL,""{%1}"", ..%2)" ; https://github.com/lscalese/openapi-suite/issues/21
+            Set line = "Set ..%URL = $Replace(" _ url _ ",""{%1}"", ..%2)" ; https://github.com/lscalese/openapi-suite/issues/21
+            Set url = "..%URL" ; https://github.com/lscalese/openapi-suite/issues/37
             Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameter.name, parameterPropertyName))
         } ElseIf parameter.in = "query" {
             If propDef.Collection '= "" {
@@ -184,8 +186,11 @@ Method GenerateLoadHttpRequestObject(path As %String, pathItem As %DynamicObject
                 Do methodDef.Implementation.WriteLine( $Char(9,9) _ "Do httpRequest.SetParam(""" _ parameter.name _ """, tmpValue, key)")
                 Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
             } Else {
+                Set line = "If (..%1 '= """") {"
+                Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameterPropertyName))
                 Set line = "Do httpRequest.SetParam(""%1"",..%2)"
-                Do methodDef.Implementation.WriteLine( $Char(9) _ $$$FormatText(line, parameter.name, parameterPropertyName))
+                Do methodDef.Implementation.WriteLine( $Char(9,9) _ $$$FormatText(line, parameter.name, parameterPropertyName))
+                Do methodDef.Implementation.WriteLine( $Char(9) _ "}")
             }
         }
 
