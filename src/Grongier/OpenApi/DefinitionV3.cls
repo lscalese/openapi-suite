@@ -60,13 +60,13 @@ Method GenerateClasses() As %Status
                     Do ..log($c(9) _ schema."$ref" _ " does not resolve to an object type")
                 }
             }
-            Elseif (schema.type '= "object") && ('schema.%IsDefined("allOf")) && ('schema.%IsDefined("properties"))
+            Elseif ##class(dc.openapi.common.Utils).IsSchemaObject(schema)
             {
-                Do ..log($c(9) _ key _ " is not an object type.")
+                Set sc = $$$ADDSC(sc, ..GenerateClassModel(schema, ..package _ "." _ $zstrip(key,"*P")))
             }
             else
             {
-                Set sc = $$$ADDSC(sc, ..GenerateClassModel(schema, ..package _ "." _ $zstrip(key,"*P")))
+                Do ..log($c(9) _ key _ " is not an object type.")
             }
         }
     }
@@ -125,12 +125,27 @@ Method GenerateProperties(classDef As %Dictionary.ClassDefinition, properties As
 
         If property.type = "object" {
 
-            ; Embedded object ... a class must be generated.
-            ; Recursive call ...
-            
-            Set propDef.Type = classDef.Name _ $zstrip(key,"*P")
-            Do ..GenerateClassModel(property, propDef.Type)
-        
+            if $ISOBJECT(property.additionalProperties) && (property.additionalProperties."$ref" '= "") 
+            {
+                ; Special case: Generate as an array of..
+                ; We expect a $ref for the type
+
+                Set refObject = ..GetObjectByRef(property.additionalProperties."$ref", .refName, .package)
+                Continue:'$IsObject(refObject)
+
+                Set propDef.Collection = "array"
+                Set propDef.Type = $Select(##class(dc.openapi.common.Utils).IsSchemaObject(refObject): package _ "." _refName, 1: ..GetObjectScriptType(refObject.type, refObject.format))
+
+                Do ..log($Char(9)_ "- Adding array of " _ propDef.Type _ " for property " _ key)
+            }
+            else
+            {
+                ; Embedded object ... a class must be generated.
+                ; Recursive call ...
+                
+                Set propDef.Type = classDef.Name _ $zstrip(key,"*P")
+                Do ..GenerateClassModel(property, propDef.Type)
+            }
         } ElseIf property.type = "array" {
             
             Do XMLParameters
@@ -149,7 +164,7 @@ Method GenerateProperties(classDef As %Dictionary.ClassDefinition, properties As
                 Set refObject = ..GetObjectByRef(property.items."$ref", .name, .package)
                 Continue:'$IsObject(refObject)
 
-                Set propDef.Type = $Select(refObject.type="object": package _ "." _name, 1: ..GetObjectScriptType(refObject.type, refObject.format))
+                Set propDef.Type = $Select(##class(dc.openapi.common.Utils).IsSchemaObject(refObject): package _ "." _name, 1: ..GetObjectScriptType(refObject.type, refObject.format))
                 Set pObj = refObject
             } Else {
 
@@ -162,7 +177,7 @@ Method GenerateProperties(classDef As %Dictionary.ClassDefinition, properties As
             Set refObject = ..GetObjectByRef(property."$ref", .refName, .package)
             Continue:'$IsObject(refObject)
 
-            Set propDef.Type = $Select(refObject.type="object": package _ "." _refName, 1: ..GetObjectScriptType(refObject.type, refObject.format))
+            Set propDef.Type = $Select(##class(dc.openapi.common.Utils).IsSchemaObject(refObject): package _ "." _refName, 1: ..GetObjectScriptType(refObject.type, refObject.format))
 
             Set pObj = refObject
         } Else {
@@ -283,7 +298,7 @@ Method GenerateInLineModel(paths As %DynamicObject = {..spec.paths}) As %Status
     Set iterator = paths.%GetIterator()
 
     While iterator.%GetNext(.key, .path, .type) {
-        Continue:type'="object"
+        Continue:'##class(dc.openapi.common.Utils).IsSchemaObject(type)
 
         Set:path."$ref"'="" path = ..GetObjectByRef(path."$ref")
         Continue:'$IsObject(path)
@@ -472,7 +487,7 @@ Method CommonSchemaProcess(classDef As %Dictionary.ClassDefinition, propDef As %
             Set refObject = ..GetObjectByRef(schema.items."$ref", .refName, .package)
             Quit:'$IsObject(refObject) sc
             
-            Set propDef.Type = $Select(refObject.type="object": package _ "." _ refName, 1: ..GetObjectScriptType(refObject.type, refObject.format))
+            Set propDef.Type = $Select(##class(dc.openapi.common.Utils).IsSchemaObject(refObject): package _ "." _ refName, 1: ..GetObjectScriptType(refObject.type, refObject.format))
             
         } Else {
 
