@@ -1,0 +1,240 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "API Exemple",
+        "version": "1.0.0",
+        "description": "API d'exemple avec références à des types de base"
+    },
+    "components": {
+        "schemas": {
+            "StringType": {
+                "type": "string",
+                "description": "Type de base pour les chaînes de caractères"
+            },
+            "IntegerType": {
+                "type": "integer",
+                "description": "Type de base pour les nombres entiers",
+                "format": "int32"
+            },
+            "BooleanType": {
+                "type": "boolean",
+                "description": "Type de base pour les valeurs booléennes"
+            },
+            "BooleanArray": {
+                "type": "array",
+                "description": "Type de base pour les listes de valeurs booléennes",
+                "items": {
+                    "$ref": "#/components/schemas/BooleanType"
+                }
+            },
+            "ObjectWithXOf": {
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "$ref": "#/components/schemas/IntegerType"
+                            },
+                            "name": {
+                                "$ref": "#/components/schemas/StringType"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name"
+                        ]
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "isActive": {
+                                "$ref": "#/components/schemas/BooleanType"
+                            },
+                            "booleanList": {
+                                "$ref": "#/components/schemas/BooleanArray"
+                            }
+                        }
+                    }, 
+                    {
+                        "$ref" : "#/components/schemas/StringType"
+                    },
+                    {
+                        "$ref": "#/components/schemas/BooleanArray"
+                    }
+                ]
+            },
+            "ExampleObject": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/components/schemas/IntegerType"
+                    },
+                    "name": {
+                        "$ref": "#/components/schemas/StringType"
+                    },
+                    "isActive": {
+                        "$ref": "#/components/schemas/BooleanType"
+                    },
+                    "booleanList": {
+                        "$ref": "#/components/schemas/BooleanArray"
+                    },
+                    "nestedObject": {
+                        "type": "object",
+                        "properties": {
+                            "description": {
+                                "$ref": "#/components/schemas/StringType"
+                            },
+                            "status": {
+                                "$ref": "#/components/schemas/BooleanType"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            }
+        },
+        "responses": {
+            "BadRequest": {
+                "description": "Requête invalide",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/StringType"
+                        }
+                    }
+                }
+            },
+            "NotFound": {
+                "description": "Ressource non trouvée",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/StringType"
+                        }
+                    }
+                }
+            },
+            "InternalServerError": {
+                "description": "Erreur interne du serveur",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/StringType"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/ressources/{id}": {
+            "get": {
+                "summary": "Récupérer une ressource",
+                "description": "Récupère une ressource par son identifiant",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/IntegerType"
+                        }
+                    },
+                    {
+                        "name": "filterName",
+                        "in": "query",
+                        "description": "Filtre sur le nom",
+                        "schema": {
+                            "$ref": "#/components/schemas/StringType"
+                        }
+                    },
+                    {
+                        "name": "active",
+                        "in": "query",
+                        "description": "Filtre sur l'état actif",
+                        "schema": {
+                            "$ref": "#/components/schemas/BooleanType"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Opération réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ExampleObject"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Ressource non trouvée",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StringType"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "summary": "Mettre à jour une ressource",
+                "description": "Met à jour une ressource existante",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/IntegerType"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "Données de base à mettre à jour",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StringType"
+                            }
+                        },
+                        "text/plain": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BooleanType"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mise à jour réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/IntegerType"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Requête invalide",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BooleanType"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

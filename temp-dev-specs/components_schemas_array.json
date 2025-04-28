@@ -1,0 +1,60 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Test Schema for Flattening",
+    "description": "API avec schemas contenant des propriétés array avec définition d'objets en ligne",
+    "version": "1.0.0"
+  },
+  "components": {
+    "schemas": {
+      "Person": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "name": {
+            "type": "string"
+          },
+          "addresses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "street": {
+                  "type": "string"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "zipCode": {
+                  "type": "string"
+                },
+                "isDefault": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "phoneNumbers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "number": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["home", "work", "mobile"]
+                }
+              }
+            }
+          }
+        },
+        "required": ["id", "name"]
+      }
+    }
+  }
+}

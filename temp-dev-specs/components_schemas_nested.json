@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Nested Schema Example",
+    "version": "1.0.0",
+    "description": "A simple API with nested schema objects"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "MainObject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier of the main object"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the main object"
+          },
+          "firstNestedObject": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "description": "ID of the first nested object"
+              },
+              "title": {
+                "type": "string",
+                "description": "Title of the first nested object"
+              },
+              "active": {
+                "type": "boolean",
+                "default": true
+              },
+              "deepNestedObject": {
+                "type": "object",
+                "properties": {
+                  "deepId": {
+                    "type": "string",
+                    "description": "ID of the deep nested object"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "created": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "author": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": ["id", "title"]
+          },
+          "secondNestedObject": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Code of the second nested object"
+              },
+              "value": {
+                "type": "number",
+                "description": "Value of the second nested object"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "nestedConfiguration": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "settings": {
+                    "type": "object",
+                    "properties": {
+                      "timeout": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 30
+                      },
+                      "retryCount": {
+                        "type": "integer",
+                        "default": 3
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": ["code"]
+          }
+        },
+        "required": ["id", "name"]
+      }
+    }
+  }
+}

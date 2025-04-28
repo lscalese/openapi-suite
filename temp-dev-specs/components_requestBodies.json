@@ -1,0 +1,191 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Nested RequestBody Example",
+    "description": "Example API with nested request bodies for flattening tests",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "requestBodies": {
+      "CreateUserRequest": {
+        "description": "Request body for creating a new user with nested objects",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["username", "email", "profile"],
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 50
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "profile": {
+                  "type": "object",
+                  "required": ["firstName", "lastName"],
+                  "properties": {
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "integer",
+                      "minimum": 18
+                    },
+                    "address": {
+                      "type": "object",
+                      "properties": {
+                        "street": {
+                          "type": "string"
+                        },
+                        "city": {
+                          "type": "string"
+                        },
+                        "zipCode": {
+                          "type": "string",
+                          "pattern": "^[0-9]{5}(?:-[0-9]{4})?$"
+                        },
+                        "geolocation": {
+                          "type": "object",
+                          "properties": {
+                            "latitude": {
+                              "type": "number",
+                              "format": "float"
+                            },
+                            "longitude": {
+                              "type": "number",
+                              "format": "float"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "preferences": {
+                  "type": "object",
+                  "properties": {
+                    "theme": {
+                      "type": "string",
+                      "enum": ["light", "dark", "system"]
+                    },
+                    "notifications": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "boolean",
+                          "default": true
+                        },
+                        "sms": {
+                          "type": "boolean",
+                          "default": false
+                        },
+                        "frequency": {
+                          "type": "string",
+                          "enum": ["daily", "weekly", "monthly"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ProductSubmission": {
+        "description": "Request body for submitting a product with nested categories and variants",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["name", "price", "category"],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number",
+                  "format": "float",
+                  "minimum": 0
+                },
+                "category": {
+                  "type": "object",
+                  "required": ["id", "name"],
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "subCategory": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "variants": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "sku": {
+                        "type": "string"
+                      },
+                      "attributes": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "stock": {
+                        "type": "object",
+                        "properties": {
+                          "quantity": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "warehouse": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "location": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

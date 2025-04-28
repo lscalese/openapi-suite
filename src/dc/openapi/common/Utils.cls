@@ -256,4 +256,32 @@ ClassMethod KillTempData(key As %String = "") As %Status
     Quit $$$OK
 }
 
+ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = "") As %String
+{
+
+    Quit:oaType="" "%VarString"
+
+    Set:format="" format = " "  ; to avoid subscript error later.
+
+    Set table("integer") = "%Integer"
+    Set table("integer", "int32") = "%Integer"
+    Set table("integer", "int64") = "%Integer"
+    
+    Set table("number") = "%Decimal"
+    Set table("number", "float") = "%Decimal"
+    Set table("number", "double") = "%Double"
+    
+    Set table("string") = "%String"
+    Set table("string", "byte") = "%Stream.GlobalCharacter"
+    Set table("string", "binary") = "%Stream.GlobalBinary"
+    Set table("string", "date-time") = "%TimeStamp"
+    Set table("string", "date") = "%Date"
+    
+    Set table("file") = "%Stream.Object"
+
+    Set table("boolean") = "%Boolean"
+
+    Quit $Get(table(oaType, format), $Get(table(oaType), "%VarString" ))
+}
+
 }

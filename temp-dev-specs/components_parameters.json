@@ -1,0 +1,88 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Parameters Test API",
+    "description": "API with components.parameters containing inline objects for flattener testing",
+    "version": "1.0.0"
+  },
+  "components": {
+    "parameters": {
+      "filterParameter": {
+        "name": "filter",
+        "in": "query",
+        "description": "Filter criteria with inline object definition",
+        "required": false,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Filter by name"
+            },
+            "status": {
+              "type": "string",
+              "enum": ["active", "pending", "inactive"],
+              "description": "Filter by status"
+            },
+            "criteria": {
+              "type": "object",
+              "properties": {
+                "minValue": {
+                  "type": "integer",
+                  "description": "Minimum value"
+                },
+                "maxValue": {
+                  "type": "integer",
+                  "description": "Maximum value"
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "complexParameter": {
+        "name": "options",
+        "in": "header",
+        "description": "Complex options with nested inline objects",
+        "required": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "sorting": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": ["asc", "desc"]
+                }
+              }
+            },
+            "pagination": {
+              "type": "object",
+              "properties": {
+                "page": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "pageSize": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 100
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

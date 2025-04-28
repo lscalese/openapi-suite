@@ -6,10 +6,7 @@ Class dc.openapi.common.SpecificationLoader
 
 /// Return the swagger specification in a dynamic object <br/>
 /// spec argument could be a stream, a dynamic object or an URL.<br/>
-ClassMethod AbstractSpecLoader(
-	spec,
-	ByRef sc As %Status = {$$$OK},
-	resolveExternalRef As %Boolean = {$$$YES}) As %DynamicObject
+ClassMethod AbstractSpecLoader(spec, ByRef sc As %Status = {$$$OK}, resolveExternalRef As %Boolean = {$$$YES}) As %DynamicObject
 {
     Set sc = $$$OK, OpenAPI = ""
 
@@ -24,7 +21,6 @@ ClassMethod AbstractSpecLoader(
 
         If $$$ISERR(sc) $$$ThrowStatus(sc)
 
-        
         ; Now check if it's a OpenAPI 3 specification and convert if it's a previous version.
 
         If OpenAPI.%IsDefined("swagger") {

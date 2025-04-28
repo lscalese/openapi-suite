@@ -1,0 +1,329 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "User Configurations API",
+    "description": "API to manage user configurations with dynamic properties",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/configurations/{userId}": {
+      "get": {
+        "summary": "Get user configurations",
+        "description": "Retrieve all configuration settings for a specific user",
+        "operationId": "getUserConfigurations",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "ID of the user",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User configurations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200"
+                },
+                "example": {
+                  "id": "config-123",
+                  "userId": "user-456",
+                  "name": "App Settings",
+                  "createdAt": "2023-11-01T12:00:00Z",
+                  "settings": {
+                    "theme": {
+                      "status": "active",
+                      "lastUpdated": "2023-11-01T12:00:00Z"
+                    },
+                    "notifications": {
+                      "status": "disabled",
+                      "lastUpdated": "2023-10-25T08:30:00Z"
+                    }
+                  },
+                  "address": {
+                    "street": "123 Main St",
+                    "city": "Springfield",
+                    "state": "IL",
+                    "postalCode": "62704",
+                    "country": "USA"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/configurations/objectParam": {
+      "get": {
+        "summary": "Create configuration with object parameter",
+        "description": "Create a new configuration using an inline object parameter",
+        "operationId": "createConfigurationWithObjectParam",
+        "parameters": [
+          {
+            "name": "user",
+            "in": "query",
+            "description": "a user",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "$ref": "#/components/schemas/user"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/configurations_objectParam_body"
+              },
+              "example": {
+                "user": {
+                  "id": "user-123",
+                  "name": "John Doe"
+                },
+                "configuration": {
+                  "name": "New Config",
+                  "settings": {
+                    "theme": "dark",
+                    "notifications": "enabled"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Configuration created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_201"
+                },
+                "example": {
+                  "id": "config-456",
+                  "status": "success"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "inline_response_200": {
+        "required": [
+          "address",
+          "createdAt",
+          "id",
+          "name",
+          "settings",
+          "userId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the configuration"
+          },
+          "userId": {
+            "type": "string",
+            "description": "ID of the user who owns the configuration"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the configuration set"
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "Creation timestamp",
+            "format": "date-time"
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": {
+              "required": [
+                "lastUpdated",
+                "status"
+              ],
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "description": "Current status of the setting",
+                  "enum": [
+                    "active",
+                    "disabled",
+                    "pending"
+                  ]
+                },
+                "lastUpdated": {
+                  "type": "string",
+                  "description": "Timestamp of the last update",
+                  "format": "date-time"
+                }
+              },
+              "description": "Details about a specific setting"
+            },
+            "description": "Dynamic settings with any property names",
+            "example": {
+              "theme": {
+                "status": "active",
+                "lastUpdated": "2023-11-01T12:00:00Z"
+              },
+              "notifications": {
+                "status": "disabled",
+                "lastUpdated": "2023-10-25T08:30:00Z"
+              }
+            }
+          },
+          "address": {
+            "required": [
+              "city",
+              "country",
+              "postalCode",
+              "street"
+            ],
+            "type": "object",
+            "properties": {
+              "street": {
+                "type": "string",
+                "description": "Street name and number"
+              },
+              "city": {
+                "type": "string",
+                "description": "City name"
+              },
+              "state": {
+                "type": "string",
+                "description": "State or region"
+              },
+              "postalCode": {
+                "type": "string",
+                "description": "Postal or ZIP code"
+              },
+              "country": {
+                "type": "string",
+                "description": "Country name"
+              }
+            },
+            "description": "Address details of the user",
+            "example": {
+              "street": "123 Main St",
+              "city": "Springfield",
+              "state": "IL",
+              "postalCode": "62704",
+              "country": "USA"
+            }
+          }
+        }
+      },
+      "configurationsobjectParam_user": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User name"
+          }
+        },
+        "description": "User details"
+      },
+      "configurationsobjectParam_configuration": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Configuration name"
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Dynamic settings"
+          }
+        },
+        "description": "Configuration details"
+      },
+      "configurations_objectParam_body": {
+        "required": [
+          "configuration",
+          "user"
+        ],
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/configurationsobjectParam_user"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/configurationsobjectParam_configuration"
+          }
+        }
+      },
+      "user": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "User name"
+          }
+        }
+      },
+      "inline_response_201": {
+        "required": [
+          "id",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the created configuration"
+          },
+          "status": {
+            "type": "string",
+            "description": "Creation status"
+          }
+        }
+      }
+    }
+  }
+}

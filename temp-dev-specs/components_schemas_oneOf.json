@@ -1,0 +1,199 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AnyOf Examples API",
+    "description": "API with complex anyOf examples for testing",
+    "version": "1.0.0"
+  },
+  "paths": {},
+  "components": {
+    "schemas": {
+      "PrimitiveAnyOf": {
+        "description": "Example of anyOf with primitive types",
+        "oneOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      },
+      "SimpleAddress": {
+        "type": "object",
+        "properties": {
+          "street": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        }
+      },
+      "ContactInfo": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "GeoLocation": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "format": "float"
+          },
+          "longitude": {
+            "type": "number",
+            "format": "float"
+          }
+        }
+      },
+      "EnhancedAddress": {
+        "type": "object",
+        "properties": {
+          "basicInfo": {
+            "$ref": "#/components/schemas/SimpleAddress"
+          },
+          "geoLocation": {
+            "$ref": "#/components/schemas/GeoLocation"
+          }
+        }
+      },
+      "ComplexObjectAnyOf": {
+        "description": "Example of anyOf referencing object schemas",
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SimpleAddress"
+          },
+          {
+            "$ref": "#/components/schemas/ContactInfo"
+          },
+          {
+            "$ref": "#/components/schemas/EnhancedAddress"
+          }
+        ]
+      },
+      "PersonalDetails": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "age": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "identity": {
+            "oneOf": [
+              {
+                "type": "string",
+                "description": "Social security number"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "passportNumber": {
+                    "type": "string"
+                  },
+                  "countryOfIssue": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "DeepNestedAnyOf": {
+        "description": "Multiple levels of nested objects with anyOf",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "personalInfo": {
+            "$ref": "#/components/schemas/PersonalDetails"
+          },
+          "contact": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ContactInfo"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "socialMedia": {
+                    "type": "object",
+                    "properties": {
+                      "platform": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "verification": {
+                        "oneOf": [
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "method": {
+                                "type": "string",
+                                "enum": ["email", "phone", "document"]
+                              },
+                              "dateVerified": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "status": {
+                                "oneOf": [
+                                  {
+                                    "type": "string",
+                                    "enum": ["pending", "verified", "rejected"]
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "code": {
+                                        "type": "integer"
+                                      },
+                                      "description": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "location": {
+            "$ref": "#/components/schemas/ComplexObjectAnyOf"
+          }
+        }
+      }
+    }
+  }
+}
