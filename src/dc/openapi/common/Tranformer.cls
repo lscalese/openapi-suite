@@ -19,7 +19,6 @@ Property ParmameterIDX As dc.openapi.common.ast.Parameter [ MultiDimensional ];
 
 /// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_components_schemas_allOf1.json"))
 /// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json"))
-/// 
 ClassMethod Test(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas.json")}) As %Status
 {
     Set sc = $$$OK
