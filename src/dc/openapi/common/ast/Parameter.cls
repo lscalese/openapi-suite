@@ -3,21 +3,17 @@ Class dc.openapi.common.ast.Parameter Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
 /// The name of the parameter
-Property name As %String;
+Property Name As %String;
 
 /// The location of the parameter (query, header, path, cookie)
-Property in As %String;
-
-/// The type of the parameter (string, number, boolean, etc.)
-Property type As dc.openapi.common.ast.ParameterType;
+Property In As %String;
 
 /// A description of the parameter
-Property description As %String;
+Property Description As %String;
 
 /// Whether the parameter is required or optional
-Property required As %Boolean;
+Property Required As %Boolean;
 
-/// The default value of the parameter
-Property defaultValue As %String;
+Property ModelProperty As dc.openapi.common.ast.ModelProperty;
 
 }

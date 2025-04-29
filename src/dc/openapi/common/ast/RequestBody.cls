@@ -2,10 +2,12 @@
 Class dc.openapi.common.ast.RequestBody Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
-Property required As %Boolean;
+Property Required As %Boolean;
 
-Property contentType As %String;
+Property ContentType As %String;
 
-Property type As %String;
+Property ModelProperty As dc.openapi.common.ast.ModelProperty;
+
+Property Description As %String;
 
 }

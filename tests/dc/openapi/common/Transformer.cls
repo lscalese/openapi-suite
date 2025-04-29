@@ -23,7 +23,7 @@ Method TestSimpleSchemas()
     Set sc = $$$OK
 
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($ClassName()_"||ComponentsSchema").Data)
-    
+
     Set transformer = ##class(dc.openapi.common.Tranformer).%New()
     Set transformer.OAS = swagger
 
@@ -31,9 +31,11 @@ Method TestSimpleSchemas()
 
     Do $$$AssertStatusOK(sc, "Transform() must return a status OK")
 
-    Do transformer.ast.%JSONExportToString(.tempString)
+    Do transformer.AST.%JSONExportToString(.tempString)
     Do ##class(%JSON.Formatter).%New().FormatToString(tempString, .formattedString)
     Write !, formattedString,!
+
+    
 
     Quit
 }

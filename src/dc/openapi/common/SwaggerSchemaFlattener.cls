@@ -33,11 +33,12 @@ Property ToMove As %DynamicObject [ Private ];
 Property ResolveDataType As %Boolean [ InitialExpression = 1 ];
 
 /// Flag to remove data type components after ResolveDataType
-Property RemoveDataTypeComponents As %Boolean [ InitialExpression = 1 ];
+Property RemoveDataTypeComponents As %Boolean [ InitialExpression = 0 ];
 
 ClassMethod test()
 {
-    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_datatype.json")
+    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_allOf1.json")
+    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json")
     
     Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
     Set flattener.OAS = oas

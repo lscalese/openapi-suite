@@ -4,16 +4,29 @@ Class dc.openapi.common.Tranformer Extends %RegisteredObject
 
 Property OAS As %DynamicObject;
 
-Property ast As dc.openapi.common.ast.OAS;
+Property AST As dc.openapi.common.ast.OAS;
+
+Property PackageModel As %String;
+
+Property Qualifiers As %String;
 
 Property Warnings As list Of %String;
 
-ClassMethod Test(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/additionalProperties.json")}) As %Status
+/// Index of the models
+Property ModelIDX As dc.openapi.common.ast.Model [ MultiDimensional ];
+
+Property ParmameterIDX As dc.openapi.common.ast.Parameter [ MultiDimensional ];
+
+/// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_components_schemas_allOf1.json"))
+/// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json"))
+/// 
+ClassMethod Test(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas.json")}) As %Status
 {
     Set sc = $$$OK
 
     Set t = ##class(dc.openapi.common.Tranformer).%New()
     Set t.OAS = oas
+    Set t.PackageModel = "myapp.models"
 
     Set sc = t.Transform()
     If $$$ISERR(sc) {
@@ -21,19 +34,20 @@ ClassMethod Test(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-spec
         Quit sc
     }
     
-    Do t.ast.%JSONExport()
-
+    Do t.AST.%JSONExportToString(.tempString)
+    Do ##class(%JSON.Formatter).%New().FormatToString(tempString, .string)
+    w !,string,!
     Write !,"Transform OK", !
-    
-    Quit sc
+
+    Return sc
 }
 
 Method Transform() As %Status
 {
     Set sc = $$$OK
 
-    Set ..ast = ##class(dc.openapi.common.ast.OAS).%New()
-    Set ..ast.openapi = ..OAS.openapi
+    Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
+    Set ..AST.OpenAPI = ..OAS.openapi
     
     Do ..Info()
     Do ..Servers()
@@ -45,16 +59,16 @@ Method Transform() As %Status
 
 Method Info() As %Status
 {
-    Set (..ast.info, info) = ##class(dc.openapi.common.ast.Info).%New()
+    Set (..AST.Info, info) = ##class(dc.openapi.common.ast.Info).%New()
     
     If '$IsObject(..OAS.info) {
         Return $$$OK
     }
 
-    Set info.title = ..OAS.info.title
-    Set info.version = ..OAS.info.version
-    Set info.description = ..OAS.info.description
-    Set info.termsOfService = ..OAS.info.termsOfService
+    Set info.Title = ..OAS.info.title
+    Set info.Version = ..OAS.info.version
+    Set info.Description = ..OAS.info.description
+    Set info.TermsOfService = ..OAS.info.termsOfService
 
     Return $$$OK
 }
@@ -74,186 +88,136 @@ Method Models() As %Status
     #dim iterator As %Iterator.AbstractIterator
     Set iterator = ..OAS.components.schemas.%GetIterator()
     While iterator.%GetNext(.key, .schema, .type) {
-        If '$IsObject(schema) {
-            Continue
-        }
-
-        Set model = ##class(dc.openapi.common.ast.Model).%New()
-        Set model.name = key
-
-        If $IsObject(schema.allOf) {
-            Do HandleAllOf
-        } 
-        ElseIf ..IsObjectComponent(schema) {
-            If schema.%IsDefined("properties") {
-            
-            }
-        }
         
-        Do ..ast.models.Insert(model)
+        If '$IsObject(schema) Continue
+        
+        Set model = ..GetModel(..OAS.components.schemas, key)
+
+        Do:$IsObject(model) ..AST.Models.Insert(model)
     }
 
     Return sc
-
-HandleAllOf
-    #dim allOfIterator As %Iterator.AbstractIterator
-    Set allOfIterator = schema.allOf.%GetIterator()
-    While allOfIterator.%GetNext(.allOfKey, .allOfItem, .allOfType) {
-
-        If '$IsObject(allOfItem) {
-            Continue
-        }
-
-        If allOfItem."$ref" '= "" {
-            ; Handle $ref
-            ; The referenced component can be an object, array or data type.
-            Do HandleAllOfRef
-        } ElseIf allOfItem.type = "array" {
-            Do HandleAllOfArray
-        } Else {
-            ; Handle inline definition
-            ; With the simplified swagger spec, the inline definition will be just data type (not object).
-            Set modelProperty = ..GetDataTypeProperty(allOfItem)
-            Set modelProperty.Name = "AllOf" _ allOfItem.type _ allOfKey
-            Do model.Properties.Insert(modelProperty)
-        }
-    }
-    Quit
-
-HandleAllOfRef  
-    Set refComponent = ..GetReference(allOfItem."$ref")
-
-    If '$IsObject(refComponent) {
-        Quit
-    }
-
-    If ..IsObjectComponent(refComponent) {
-        
-        Set model.Super = model.Super _ "," _ ..GetClassName(allOfItem."$ref")
-        
-    } ElseIf refComponent.type = "array" {
-        If '..IsObjectComponent(refComponent.items) {
-            Set modelProperty = ..GetDataTypeProperty(refComponent.items)
-            Set modelProperty.Name = ..GetPropertyNameByRef(allOfItem."$ref")
-            Set modelProperty.Collection = "list"
-            Do model.Properties.Insert(modelProperty)
-        } Else {
-            ; allOf should be used like class inheritance.
-            ; reference to an array is ambiguous for code generation.
-            Do ..Warnings.Insert("Ambiguous reference to array type in allOf.")
-        }
-    } Else {
-        Set modelProperty = ..GetDataTypeProperty(refComponent)
-        Set modelProperty.Name = ..GetPropertyNameByRef(allOfItem."$ref")
-        Do model.Properties.Insert(modelProperty)
-    }
-
-    Quit
-
-HandleAllOfArray
-    ; The swagger spec is simplified, so inline definition will be just data type (not object).
-    ; Object will be always defined in the components section.
-    If '$IsObject(allOfItem.items) {
-        Quit
-    }
-
-    If allOfItem.items."$ref" '= "" {
-        Do ..Warnings.Insert("Inline definition of array with $ref used in allOf is not supported.")
-
-        Set refComponent = ..GetReference(allOfItem.items."$ref")
-
-        If '$IsObject(refComponent) {
-            Quit
-        }
-
-
-
-        If ..IsObjectComponent(refComponent) {
-            ; allOf should be used like class inheritance.
-            ; reference to an array is ambiguous for code generation.
-            Do ..Warnings.Insert("Ambiguous reference to array type in allOf.")
-        } ElseIf refComponent.type = "array" {
-            ; Array which references another array is ambiguous for code generation.
-            Do ..Warnings.Insert("Ambiguous reference an array type in allOf array.")
-        } Else {
-            ; It's a reference to a simple data type.
-            ; We can add a property to the model.
-            Set modelProperty = ..GetDataTypeProperty(refComponent)
-            Set modelProperty.Name = ..GetPropertyNameByRef(allOfItem.items."$ref")
-            Set modelProperty.Collection = "list"
-            Do model.Properties.Insert(modelProperty)
-            Kill modelProperty
-        }
-
-    } ElseIf allOfItem.items.type = "array" {
-        ; Array which references another array is ambiguous for code generation.
-        Do ..Warnings.Insert("Ambiguous reference an array type in allOf array.")
-    } Else {
-        ; It's a reference to a simple data type.
-        ; We can add a property to the model.
-        Set modelProperty = ..GetDataTypeProperty(allOfItem.items)
-        Set modelProperty.Name = "AllOf" _ allOfItem.items _ allOfKey
-        Set modelProperty.Collection = "list"
-        Do model.Properties.Insert(modelProperty)
-        Kill modelProperty
-    }
-    
-    Quit
 }
 
-ClassMethod CreateModel(parentObj As %DynamicObject, modelName As %String) As dc.openapi.common.ast.Model
+Method GetModel(parentObj As %DynamicObject, modelName As %String) As dc.openapi.common.ast.Model
 {
-    Set objectDefinition = parentObj.%Get(modelName)
-    If '$IsObject(objectDefinition) {
+    ; schema is a swagger schema component
+    Set schema = parentObj.%Get(modelName)
+
+    If '$IsObject(schema) {
+        Return ""
+    }
+
+    If schema.type '= "object" && '$IsObject(schema.allOf) && '$IsObject(schema.oneOf) && '$IsObject(schema.anyOf) {
+        ; is not an object schema definition
         Return ""
     }
 
     Set model = ##class(dc.openapi.common.ast.Model).%New()
-    Set model.Name = modelName
+    Set model.Name = ..GetClassName(modelName)
+    Set model.SchemaRef = "#/components/schemas/" _ modelName
 
-    
-    If parentObj.%IsDefined("description") {
-        Set model.Description = parentObj.description
+    Set ..ModelIDX(model.SchemaRef) = model
+
+    If schema.%IsDefined("description") {
+        Set model.Description = schema.description
     }
 
+    If $IsObject(schema.properties) {
+        Set iterator = schema.properties.%GetIterator()
+        While iterator.%GetNext(.key, .item, .type) {
+            If '$IsObject(item) Continue
+
+            Set modelProperty = ..GetModelProperty(schema.properties, key)
+            Do:$IsObject(modelProperty) model.Properties.Insert(modelProperty)
+        }
+    }
     
+    
+    If schema.%IsDefined("allOf") {
+        Set iterator = schema.allOf.%GetIterator()
+        While iterator.%GetNext(.key, .allOfItem, .type) {
+            If '$IsObject(allOfItem) Continue
+            If allOfItem."$ref" '= "" {
+                ; it's an object reference (flatten spec garantees that)
+                Set model.Super = model.Super _ "," _ ..GetClassName(allOfItem."$ref")
+            }
+            ElseIf allOfItem.%IsDefined("type") {
+                Set modelProperty = ..GetModelProperty(schema.allOf, key)
+                Set modelProperty.Name = "AllOf" _ allOfItem.type _ key
+                Do:$IsObject(modelProperty) model.Properties.Insert(modelProperty)
+            }
+        }
+    }
+
+    If schema.%IsDefined("oneOf") {
+        Set iterator = schema.oneOf.%GetIterator()
+        While iterator.%GetNext(.key, .oneOfItem, .type) {
+            If '$IsObject(oneOfItem) Continue
+
+            Set modelProperty = ..GetModelProperty(schema.oneOf, key)
+            Set modelProperty.Name = "OneOf" _ oneOfItem.type _ key
+            Do:$IsObject(modelProperty) model.Properties.Insert(modelProperty)
+        }
+    }
+
+    If schema.%IsDefined("anyOf") {
+        Set iterator = schema.anyOf.%GetIterator()
+        While iterator.%GetNext(.key, .anyOfItem, .type) {
+            If '$IsObject(anyOfItem) Continue
+
+            Set modelProperty = ..GetModelProperty(schema.anyOf, key)
+            Set modelProperty.Name = "AnyOf" _ anyOfItem.type _ key
+            Do:$IsObject(modelProperty) model.Properties.Insert(modelProperty)
+        }
+    }
+
     Return model
 }
 
-ClassMethod IsObjectComponent(components As %DynamicObject) As %Boolean
+Method GetModelProperty(parentObj As %DynamicObject, name As %String) As dc.openapi.common.ast.ModelProperty
 {
-    Set isObject = $$$NO
+    Set schema = parentObj.%Get(name)
 
-    If '$IsObject(components) {
-        Return isObject
-    }
+    Set common = schema
 
-    If components.type = "object" || components.%IsDefined("allOf") {
-        Set isObject = $$$YES
+    Set modelProperty = ##class(dc.openapi.common.ast.ModelProperty).%New()
+    Set modelProperty.Name = ..GetPropertyNameByRef(name)
+    Set modelProperty.pJSONFieldName = name
+
+    If schema."$ref" '= "" {
+        Set modelProperty.Type = ..GetClassName(schema."$ref")
     } 
-
-    Return isObject
-}
-
-Method GetDataTypeProperty(schema As %DynamicObject) As dc.openapi.common.ast.ModelProperty
-{
-    Set property = ##class(dc.openapi.common.ast.ModelProperty).%New()
-
-    Set property.Type = ..GetObjectScriptType(schema.type, schema.format)
-    Set property.pMinimum = schema.minimum
-    Set property.pMaximum = schema.maximum
-    Set property.pMinLength = schema.minLength
-    Set property.pMaxLength = schema.maxLength
-
-    Set iterator = schema.enum.%GetIterator()
-    While iterator.%GetNext(.key, .item, .type) {
-        If '$IsObject(item) {
-            Continue
+    ElseIf schema.type = "array" {
+        Set modelProperty.Collection = "list"
+        If $IsObject(schema.items) {
+            If schema.items."$ref" '= "" {
+                Set modelProperty.Type = ..GetClassName(schema.items."$ref")
+            }
+            Else {
+                Set modelProperty.Type = ..GetObjectScriptType(schema.items.type, schema.items.format)
+                Set common = schema.items
+            }
         }
-        Set property.pEnum = property.pEnum _ "," _ item
+    }
+    Else {
+        Set modelProperty.Type = ..GetObjectScriptType(schema.type, schema.format)
     }
 
-    Return property
+    Set:common.%IsDefined("minimum") modelProperty.pMinimum = common.minimum
+    Set:common.%IsDefined("maximum") modelProperty.pMaximum = common.maximum
+    Set:common.%IsDefined("minLength") modelProperty.pMinLength = common.minLength
+    Set:common.%IsDefined("maxLength") modelProperty.pMaxLength = common.maxLength
+
+    If $IsObject(common.enum) {
+        Set iterator = common.enum.%GetIterator()
+        While iterator.%GetNext(.key, .item, .type) {
+            If '$IsObject(item) Continue
+            Set modelProperty.pEnum = modelProperty.pEnum _ "," _ item
+        }
+    }
+
+    Return modelProperty
 }
 
 Method Servers() As %Status
@@ -271,10 +235,10 @@ Method Servers() As %Status
         }
 
         Set server = ##class(dc.openapi.common.ast.Server).%New()
-        Set server.url = item.url
-        Set server.description = item.description
+        Set server.Url = item.url
+        Set server.Description = item.description
 
-        Do ..ast.servers.Insert(server)
+        Do ..AST.Servers.Insert(server)
     }
 }
 
@@ -288,36 +252,33 @@ Method Paths() As %Status
     Set iterator = ..OAS.paths.%GetIterator()
 
     While iterator.%GetNext(.key, .item, .type) {
-        If '$IsObject(item) {
-            Continue
-        }
-        ; now iterate over the verbs
-        Do verbs
+        If '$IsObject(item)  Continue
+        
+        Do verbs    ; now iterate over the verbs
     }
 
     Return $$$OK
 
 verbs
-    #dim verbIterator As %Iterator.AbstractIterator
-    Set verbIterator = item.%GetIterator()
-    While verbIterator.%GetNext(.verb, .verbItem, .verbType) {
-        If '$IsObject(verbItem) {
-            Continue
-        }
+    For verb = "get", "put", "post", "delete", "options", "head", "patch", "trace" {
+        Set verbItem = item.%Get(verb)
+        
+        If '$IsObject(verbItem) Continue
 
         Set path = ##class(dc.openapi.common.ast.Path).%New()
-        Set path.path = key
-        Set path.verb = verb
-        Set path.operationId = verbItem.operationId
-        Set path.summary = verbItem.summary
-        Set path.description = verbItem.description
+        Set path.Path = key
+        Set path.Verb = verb
+        Set path.OperationId = verbItem.operationId
+        Set path.Summary = verbItem.summary
+        Set path.Description = verbItem.description
         
-        ; now iterate over the parameters
-        Do parameters
-
-        Do ..ast.paths.Insert(path)
+        Do parameters   ; now iterate over the parameters and requestBody
+        Do requestBody  ; now iterate over the requestBody
+        Do responses
+        Do ..AST.Paths.Insert(path)
     }
-    Quit
+
+    Quit 1
 
 parameters
 
@@ -333,104 +294,180 @@ parameters
             Continue
         }
 
-        Set parameter = ##class(dc.openapi.common.ast.Parameter).%New()
-        Set parameter.name = paramItem.name
-        Set parameter.in = paramItem.in
-        Set parameter.required = paramItem.required
-        Set parameter.description = paramItem.description
-
-        Set parameter.type = ..ParameterType(paramItem.schema)
+        Set parameter = ..GetParameter(paramItem)
+        Do path.Parameters.Insert(parameter)
         
-
-        Do path.parameters.Insert(parameter)
     }
-    Quit
+    Quit 1
+
+requestBody
+
+    If '$IsObject(verbItem.requestBody) Quit 1
+    If '$IsObject(verbItem.requestBody.content) Quit 1
+    /// maybe handle here requestBody.$ref if the flatten don't move it
+
+    Set mimeTypeIterator = verbItem.requestBody.content.%GetIterator()
+    While mimeTypeIterator.%GetNext(.mimeType, .mimeItem) {
+        If '$IsObject(mimeItem) {
+            Continue
+        }
+
+        Set requestBody = ##class(dc.openapi.common.ast.RequestBody).%New()
+        Set requestBody.ContentType = mimeType
+        Set requestBody.Required = verbItem.requestBody.required
+        Set requestBody.Description = verbItem.requestBody.description
+
+        Set modelProperty = ..GetModelProperty(verbItem.requestBody.content, mimeType)
+        Set modelProperty.Name = ..GetPropertyNameByRef(mimeType)
+        Set requestBody.ModelProperty = modelProperty
+
+        Do path.RequestBodies.Insert(requestBody)
+    }
+
+    Quit 1
+
+responses
+
+    If '$IsObject(verbItem.responses) Quit 1
+
+    Set codeIterator = verbItem.responses.%GetIterator()
+    While codeIterator.%GetNext(.code, .responseItem, .type) {
+        If '$IsObject(responseItem) {
+            Continue
+        }
+
+        If responseItem."$ref" '= "" {
+            Set ref = ..GetReference(responseItem."$ref", .found)
+            If found {
+                Set responseItem = ref
+            } Else {
+                ; not found
+            }
+        }
+
+        If $IsObject(responseItem.content) {
+            Set mimeTypeIterator = responseItem.content.%GetIterator()
+            While mimeTypeIterator.%GetNext(.mimeType, .mimeItem) {
+                If '$IsObject(mimeItem) {
+                    Continue
+                }
+                Set response = ##class(dc.openapi.common.ast.Response).%New()
+                Set response.StatusCode = code
+                Set response.Description = responseItem.description
+                Set response.ContentType = mimeType
+                Set response.Example = $Select($IsObject(mimeItem.example):mimeItem.example.%ToJSON(), 1: mimeItem.examples)
+                Set modelProperty = ..GetModelProperty(mimeItem, "schema")
+                Set modelProperty.Name = "Content"
+                Set response.ModelProperty = modelProperty
+                Do path.Responses.Insert(response)
+            }
+        }
+    }
+
+    Quit 1
 }
 
-Method ParameterType(parameter As %DynamicObject) As dc.openapi.common.ast.ParameterType
+Method GetParameter(paramItem As %DynamicObject) As dc.openapi.common.ast.Parameter
 {
-    Set parameterType = ##class(dc.openapi.common.ast.ParameterType).%New()
-    
-    If parameter.%IsDefined("$ref") {
-         Set parameterType.Name = $Piece(parameter."$ref" , "/", *)
+    If paramItem."$ref" '= "" {
+        Set ref = ..GetReference(paramItem."$ref", .found)
+        If found {
+            Set paramItem = ref
+        } Else {
+            ; not found
+        }
     }
+
+    Set parameter = ##class(dc.openapi.common.ast.Parameter).%New()
+    Set parameter.Name = paramItem.name
+    Set parameter.In = paramItem.in
+    Set parameter.Required = paramItem.required
+    Set parameter.Description = paramItem.description
+    Set modelProperty = ..GetModelProperty(paramItem, "schema")
+    Set modelProperty.Name = ..GetPropertyNameByRef(paramItem.name)
+    Set parameter.ModelProperty = modelProperty
+    Return parameter
+}
+
+/// Return the class name from a "$ref" components.schemas.
+Method GetClassName(ref As %String) As %String
+{
+    ;Set package = ..PackageModel
+    Set package = ""
+    Set temp = $Piece(ref, "/", *)
+
+    If temp [ "." {
+        Set package = $tr($Piece(temp, ".", 1 , *-1)," -%@","")
+        Set className = $Piece(temp, ".", *)
+    } 
+    Else {
+        Set className = temp
+    }
+
+    ; Pascal Case transformation
+    Set className = ..ToPascalCase(className)
+    Set package = $$$LOWER(package)
     
-    
-    Set parameterType.Format = parameter.format
+    If package '= "" {
+        Set package = ..GetPrefixedModelPackage(ref) _ "." _ package
+    } Else {
+        Set package = ..GetPrefixedModelPackage(ref)
+    }
 
-    Set:parameter.items.%IsDefined("explode") parameterType.Explode = parameter.items.explode
-    Set:parameter.items.%IsDefined("style") parameterType.Style = parameter.items.style
+    Return package _ "." _ className
+}
 
-    If parameter.Type = "array" {
-        Set parameterType.Collection = "list"
-        Set parameterType.Type = "string"
-        Set parameterType.Name = "%String"
+Method GetPropertyNameByRef(ref As %String) As %String
+{
+    Set className = $Piece(ref, "/", *)
+    Set className = ..ToPascalCase(className)
+    Return className
+}
 
-        If parameterType.%IsDefined("items") {
-            
-            Set itemType = ""
-            Set itemFormat = ""
-            Set itemRef = parameter.items
-            
-            If parameter.items."$ref" '= "" {
-                Set itemRef = ..GetReference(parameter.items."$ref")
-            } 
-            
-            Set:itemRef.%IsDefined("type") itemType = itemRef.type
-            Set:itemRef.%IsDefined("format") itemFormat = itemRef.format
+ClassMethod ToPascalCase(name As %String) As %String
+{
+    Set name = $Translate(name, " -%@","__")
+    Set pascalCase = ""
+    Set list = $ListFromString(name, "_"), ptr = 0
+    While $ListNext(list, ptr, value) {
+        Set pascalCase = pascalCase _ $$$UPPER($Extract(value, 1, 1)) _ $Extract(value, 2, *)
+    }
+    Return pascalCase
+}
 
-            If itemType = "object" {
-                ; todo
-            } 
+Method GetReference(ref As %String, Output found As %Boolean) As %DynamicObject
+{
+    Set object = {}, found = $$$NO
+
+    If $Extract(ref, 1, 1) = "#" { ; it's an internal reference
+        
+        Set section = $Piece(ref, "/", 2)
+        Set type = $Piece(ref, "/", 3)
+        Set name = $Piece(ref, "/", 4)
+        Try {
+            Set object = ..OAS.%Get(section).%Get(type).%Get(name)
+            Set found = $IsObject(object)
+        } Catch ex { ; not found
 
         }
 
-    } ElseIf parameter.Type = "object" {
-
-    } Else {
-        Set parameterType.Name = ..GetObjectScriptType(parameter.type, parameter.format)
+    }
+    Else {; it's an external reference to do ...
     }
 
-    Return parameterType
+    Return object
 }
 
-ClassMethod GetPropertyNameByRef(ref As %String) As %String
+Method GetPrefixedModelPackage(ref As %String) As %String
 {
-    Return $Piece(ref, "/", *)
-}
-
-ClassMethod GetClassName(ref As %String, Output package As %String) As %String
-{
-    Return $Piece(ref, "/", *)
-}
-
-Method GetReference(ref As %String) As %String
-{
-    Return {}
+    Set package = ..PackageModel
+    ; may add other rules depending the ref later...
+    Return package
 }
 
 ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = "") As %String
 {
     Return ##class(dc.openapi.common.Utils).GetObjectScriptType(oaType, format)
-}
-
-ClassMethod CollectOASReferences(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flatten.json")}, ByRef out As %Binary, prefix As %String = "") As %Status
-{
-    #dim iterator As %Iterator.AbstractIterator
-    Set iterator = oas.%GetIterator()
-    
-    While iterator.%GetNext(.name, .item, .type) {
-        
-        Set ref = prefix_name 
-        Set key = $Increment(out)
-        Set out(key) = ref
-
-        Write !, ref
-        If $IsObject(item) {
-            Do ..CollectOASReferences(item, .out, ref_".")
-        }
-    }
-    Return $$$OK
 }
 
 }

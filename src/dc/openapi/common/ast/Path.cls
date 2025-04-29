@@ -2,18 +2,20 @@
 Class dc.openapi.common.ast.Path Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
-Property path As %String;
+Property Path As %String;
 
-Property verb As %String;
+Property Verb As %String;
 
-Property operationId As %String;
+Property OperationId As %String;
 
-Property summary As %String;
+Property Summary As %String;
 
-Property description As %String;
+Property Description As %String;
 
-Property parameters As list Of dc.openapi.common.ast.Parameter;
+Property Parameters As list Of dc.openapi.common.ast.Parameter;
 
-Property requestBody As list Of dc.openapi.common.ast.RequestBody;
+Property RequestBodies As list Of dc.openapi.common.ast.RequestBody;
+
+Property Responses As list Of dc.openapi.common.ast.Response;
 
 }

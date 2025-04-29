@@ -44,6 +44,22 @@
         },
         "required": ["street", "city", "country"]
       },
+      "PhoneNumber": {
+        "type": "object",
+        "properties": {
+          "countryCode": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["mobile", "home", "work"]
+          }
+        },
+        "required": ["countryCode", "number"]
+      },
       "Person": {
         "allOf": [
           {
@@ -94,6 +110,13 @@
               }
             },
             "required": ["position", "department"]
+          },
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PhoneNumber"
+            },
+            "description": "List of phone numbers for the employee"
           }
         ]
       }

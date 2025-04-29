@@ -4,6 +4,9 @@ Class dc.openapi.common.ast.ModelProperty Extends (%JSON.Adaptor, %RegisteredObj
 /// Represents the property name in the ObjectScript model class
 Property Name As %String;
 
+/// JSOIN Field name
+Property pJSONFieldName As %String;
+
 /// Represents the ObjectScript type of this property
 Property Type As %String;
 

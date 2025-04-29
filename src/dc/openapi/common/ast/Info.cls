@@ -2,12 +2,12 @@
 Class dc.openapi.common.ast.Info Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
-Property title As %String;
+Property Title As %String;
 
-Property version As %String;
+Property Version As %String;
 
-Property description As %String;
+Property Description As %String;
 
-Property termsOfService As %String;
+Property TermsOfService As %String;
 
 }
