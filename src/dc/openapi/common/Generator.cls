@@ -82,11 +82,7 @@ Method IterateOnResponses(callBackMethod As %String) As %Status [ Private ]
     Quit sc
 }
 
-Method GenerateRequestClass(
-	path As %String,
-	pathItem As %DynamicObject,
-	method As %String,
-	operation As %DynamicObject) As %Status
+Method GenerateRequestClass(path As %String, pathItem As %DynamicObject, method As %String, operation As %DynamicObject) As %Status
 {
     Set sc = $$$OK
     
@@ -209,10 +205,7 @@ Method GenerateRequestClass(
     Quit sc
 }
 
-ClassMethod CheckAndGenerateOperationId(
-	method As %String,
-	operation As %DynamicObject,
-	path As %String) As %Status
+ClassMethod CheckAndGenerateOperationId(method As %String, operation As %DynamicObject, path As %String) As %Status
 {
     If operation.operationId = "" { ; In order to ease the code generation, we generate an operationId
     
@@ -229,9 +222,7 @@ ClassMethod CheckAndGenerateOperationId(
     Quit $$$OK
 }
 
-ClassMethod GetOperationParameters(
-	pathItem As %DynamicObject,
-	operation As %DynamicObject) As %DynamicArray
+ClassMethod GetOperationParameters(pathItem As %DynamicObject, operation As %DynamicObject) As %DynamicArray
 {
     #dim parameters As %DynamicArray = []
 
@@ -294,9 +285,7 @@ ClassMethod RequestBodyHelper(contentDefinition As %DynamicObject) As %DynamicOb
     Quit bodyDef
 }
 
-ClassMethod isBodyProperty(
-	propertyName As %String,
-	operation As %DynamicObject) As %Boolean
+ClassMethod isBodyProperty(propertyName As %String, operation As %DynamicObject) As %Boolean
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit $$$NO
 
@@ -305,9 +294,7 @@ ClassMethod isBodyProperty(
     Quit helperObj.%IsDefined(propertyName)
 }
 
-ClassMethod GetContentTypeListForProperty(
-	propertyName,
-	operation As %DynamicObject) As %String
+ClassMethod GetContentTypeListForProperty(propertyName, operation As %DynamicObject) As %String
 {
     If '$ISOBJECT(operation.requestBody)||'$IsObject(operation.requestBody.content) Quit ""
 
@@ -324,11 +311,7 @@ ClassMethod GetContentTypeListForProperty(
     Quit $Extract(list, 2, *)
 }
 
-ClassMethod GetXmlParameters(
-	spec As %DynamicObject,
-	schema As %DynamicObject,
-	Output xmlName,
-	Output xmlItemName)
+ClassMethod GetXmlParameters(spec As %DynamicObject, schema As %DynamicObject, Output xmlName, Output xmlItemName)
 {
     Set (xmlName, xmlItemName) = ""
 

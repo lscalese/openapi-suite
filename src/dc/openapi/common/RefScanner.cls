@@ -1,4 +1,4 @@
-Class dc.openapi.common.ExternalRefScanner Extends %RegisteredObject
+Class dc.openapi.common.RefScanner Extends %RegisteredObject
 {
 
 Parameter SEPARATOR = ".";
@@ -15,20 +15,25 @@ ClassMethod Test()
 ClassMethod GetListOfRefs(oas As %DynamicObject, internal As %Boolean = {$$$YES}, external As %Boolean = {$$$NO}) As %List
 {
     Set list = "", k = ""
-    Set status = ..CollectOASReferences(oas, .out)
+    Do ..CollectOASReferences(oas, .out)
     
     For  {
         Set k = $Order(out(k), 1, line)
         Quit:k=""
         
         If $Extract(line, *-3, *) '= "$ref" Continue
-
+        
         Set reference = ..GetValue(oas, line)
+        
         If internal {
-            Set:$Extract(reference)="#" $List(list, *+1) = reference
+            If $Extract(reference)="#" && '$Data(unique(" "_reference)) {
+                Set $List(list, *+1) = reference, unique(" "_reference) = ""
+            }
         }
         If external {
-            Set:$Extract(reference)'="#" $List(list, *+1) = reference
+            If $Extract(reference)'="#" && '$Data(unique(" "_reference)) {
+                Set $List(list, *+1) =reference, unique(" "_reference) = ""
+            }
         }
     }
     
@@ -47,6 +52,34 @@ ClassMethod GetValue(oas As %DynamicObject, ref As %String) As %String
     Return value
 }
 
+ClassMethod ReferenceIsDefined(oas As %DynamicObject, ref As %String) As %Boolean
+{
+    If '$IsObject(oas) {
+        Return $$$NO
+    }
+
+    Set subPart = $Piece(ref, "#/", 2)
+    If subPart = "" {
+        ; The reference is the received object itself
+        Return $$$YES
+    }
+    
+    Set isDefined = $$$YES
+
+    Set list = $ListFromString(subPart, "/"), ptr = 0, value = oas
+    While $ListNext(list, ptr, key) {
+        If value.%IsDefined(key) {
+            Set value = value.%Get(key)
+        }
+        Else {
+            Set isDefined = $$$NO
+            Quit
+        }
+    }
+
+    Return isDefined
+}
+
 ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, prefix As %String = "") As %Status
 {
     #dim iterator As %Iterator.AbstractIterator
@@ -58,7 +91,6 @@ ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, pr
         Set key = $Increment(out)
         Set out(key) = ref
 
-        Write !, ref
         If $IsObject(item) {
             Do ..CollectOASReferences(item, .out, ref_..#SEPARATOR)
         }
