@@ -29,6 +29,12 @@ services:
     # optional, openapi-suite don't need port exposed
     ports:
       - 8086:8080
+  yaml2json:
+    build:
+      context: .
+      dockerfile: Dockerfile_yaml2json
+    ports:
+      - 8087:80
   
 
 

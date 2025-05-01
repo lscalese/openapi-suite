@@ -1,4 +1,4 @@
-Class tests.dc.openapi.common.Transformer Extends %UnitTest.TestCase
+Class tests.dc.openapi.common.SwaggerToASTConverter Extends %UnitTest.TestCase
 {
 
 Method OnBeforeAllTests() As %Status
@@ -24,7 +24,7 @@ Method TestSimpleSchemas()
 
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($ClassName()_"||ComponentsSchema").Data)
 
-    Set transformer = ##class(dc.openapi.common.Tranformer).%New()
+    Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New()
     Set transformer.OAS = swagger
 
     Set sc = transformer.Transform()

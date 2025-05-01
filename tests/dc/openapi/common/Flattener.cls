@@ -1,4 +1,4 @@
-Class tests.dc.openapi.common.SwaggerSchemaFlattener Extends %UnitTest.TestCase
+Class tests.dc.openapi.common.Flattener Extends %UnitTest.TestCase
 {
 
 Method OnBeforeAllTests() As %Status
@@ -14,7 +14,7 @@ Method OnAfterAllTests() As %Status
 ClassMethod Go()
 {
     Set ^UnitTestRoot = "/home/irisowner/irisdev/tests/dc/openapi/common"
-    Do ##class(%UnitTest.Manager).RunTest(,"/nodelete")
+    Do ##class(%UnitTest.Manager).RunTest(":tests.dc.openapi.common.Flattener","/nodelete")
     Return
 }
 
@@ -24,7 +24,7 @@ Method TestSimpleSchema()
     
     Set clone = swagger.%ToJSON()
 
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
 
     Set sc = flattener.Lift()
@@ -43,7 +43,7 @@ Method TestSimpleSchema()
 Method TestNestedSchema()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||NestedSchemas").Data)
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
 
@@ -124,7 +124,7 @@ Method TestNestedSchema()
 Method TestAllOfSchema()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||AllOfSchemas").Data)
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
 
@@ -186,7 +186,7 @@ Method TestAllOfSchema()
 Method TestArraySchema()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||ArraySchemas").Data)
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
 
@@ -246,7 +246,7 @@ Method TestRequestBodies()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||RequestBodies").Data)
 
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
     Do $$$AssertStatusOK(sc, "Lift should be OK")
@@ -295,7 +295,7 @@ Method TestResponses()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||Responses").Data)
 
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
     Do $$$AssertStatusOK(sc, "Lift should be OK")
@@ -342,7 +342,7 @@ Method TestResponses()
 Method TestParameters()
 {
     Set swagger = {}.%FromJSON(##class(%Dictionary.XDataDefinition).%OpenId($CLASSNAME()_"||Parameters").Data)
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = swagger
     Set sc = flattener.Lift()
     Do $$$AssertStatusOK(sc, "Lift should be OK")

@@ -6,7 +6,7 @@
 /// 3. Call the Lift() method to flatten the schemas
 /// 4. The modified OpenAPI Specification object will be available in the OAS property
 /// ex : 
-/// Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+/// Set flattener = ##class(dc.openapi.common.Flattener).%New()
 /// Set flattener.OAS = oas
 /// Do flattener.Lift()
 /// Do ##class(%JSON.Formatter).%New().Format(flattener.OAS)
@@ -20,7 +20,7 @@
 /// 
 /// The swagger file must be already validated before using this class with flatten set to true and fullyResolved set to true
 /// use the Swagger Validator (dc.swaggervalidatorcli.WebSwaggerValidator)
-Class dc.openapi.common.SwaggerSchemaFlattener Extends %RegisteredObject
+Class dc.openapi.common.Flattener Extends %RegisteredObject
 {
 
 /// The OpenAPI Specification (OAS) object
@@ -35,12 +35,16 @@ Property ResolveDataType As %Boolean [ InitialExpression = 1 ];
 /// Flag to remove data type components after ResolveDataType
 Property RemoveDataTypeComponents As %Boolean [ InitialExpression = 0 ];
 
+Property HashComponentsSchemas As %String [ MultiDimensional ];
+
 ClassMethod test()
 {
     Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_allOf1.json")
     Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json")
+    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/f1.json")
     
-    Set flattener = ##class(dc.openapi.common.SwaggerSchemaFlattener).%New()
+    
+    Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.OAS = oas
     Do flattener.Lift()
     Do ##class(%JSON.Formatter).%New().Format(oas)
@@ -168,14 +172,16 @@ Method FlattenSchemasIns(currentObject As %DynamicObject, prefix As %String, ByR
             }
 
             ; Pour les objets avec propriétés, les extraire comme nouveaux schémas
-            Set newSchemaName = fullPath
-            Set newSchema = {}.%FromJSON(schemaItem.%ToJSON())
-            
-            ; Add to the list of schemas to move
-            Do ..ToMove.%Set(newSchemaName, newSchema)
+            Set newSchemaName = fullPath, newSchemaStr = schemaItem.%ToJSON(), hash = $ZCRC(newSchemaStr,7)
+            If '$Data(..HashComponentsSchemas(hash), schemaRefToSet) {
+                Set (schemaRefToSet,..HashComponentsSchemas(hash)) = "#/components/schemas/" _ newSchemaName
+                Set newSchema = {}.%FromJSON(newSchemaStr)
+                ; Add to the list of schemas to move
+                Do ..ToMove.%Set(newSchemaName, newSchema)
+            }
             
             ; Remplacer l'objet original par une référence
-            Do currentObject.%Set(name, {"$ref": ("#/components/schemas/" _ newSchemaName)})
+            Do currentObject.%Set(name, {"$ref": (schemaRefToSet)})
         }
         ElseIf schemaItem.type = "array" && schemaItem.%IsDefined("items") && $ISOBJECT(schemaItem.items) {
             
@@ -185,14 +191,17 @@ Method FlattenSchemasIns(currentObject As %DynamicObject, prefix As %String, ByR
                 Set newSchemaName = fullPath _ "Item"
                 Do ..FlattenSchemasIns(schemaItem.items.properties, newSchemaName)
                 
-                ; Extraire l'objet de tableau comme un nouveau schéma
-                Set newSchema = {}.%FromJSON(schemaItem.items.%ToJSON())
-                
-                ; Ajout du nouveau schéma dans components
-                Do ..ToMove.%Set(newSchemaName, newSchema)
-                
+                Set newSchemaStr = schemaItem.items.%ToJSON(), hash = $ZCRC(newSchemaStr,7)
+                If '$Data(..HashComponentsSchemas(hash), schemaRefToSet) {
+                    Set (schemaRefToSet,..HashComponentsSchemas(hash)) = "#/components/schemas/" _ newSchemaName
+                    ; Extraire l'objet de tableau comme un nouveau schéma
+                    Set newSchema = {}.%FromJSON(newSchemaStr)
+                    ; Add to the list of schemas to move
+                    Do ..ToMove.%Set(newSchemaName, newSchema)
+                }
+
                 ; Remplacer l'objet original par une référence
-                Do schemaItem.%Set("items",{"$ref": ("#/components/schemas/" _ newSchemaName)})
+                Do schemaItem.%Set("items",{"$ref": (schemaRefToSet)})
             }
             ElseIf schemaItem.items.%IsDefined("allOf") || schemaItem.items.%IsDefined("oneOf") || schemaItem.items.%IsDefined("anyOf") {
                 ; An array can also contain allOf, oneOf, or anyOf ...
@@ -214,15 +223,17 @@ Method FlattenSchemasIns(currentObject As %DynamicObject, prefix As %String, ByR
                         Set newSchemaName = fullPath _ key _ xofKey
                         Do ..FlattenSchemasIns(xOfSchemaItem.properties, newSchemaName)
                         
-                        ; Créer un nouveau schéma pour l'élément de tableau
-                        Set newSchema = {}.%FromJSON(xOfSchemaItem.%ToJSON())
-                        
-                        ; Ajouter le nouveau schéma et référencer-le
-                        Do ..ToMove.%Set(newSchemaName, newSchema)
-                        
+                        Set newSchemaStr = xOfSchemaItem.%ToJSON(), hash = $ZCRC(newSchemaStr,7)
+                        If '$Data(..HashComponentsSchemas(hash), schemaRefToSet) {
+                            Set (schemaRefToSet,..HashComponentsSchemas(hash)) = "#/components/schemas/" _ newSchemaName
+                            ; Extraire l'objet de tableau comme un nouveau schéma
+                            Set newSchema = {}.%FromJSON(newSchemaStr)
+                            ; Add to the list of schemas to move
+                            Do ..ToMove.%Set(newSchemaName, newSchema)
+                        }
+
                         ; Référencer le nouveau schéma
-                        Do schemaItem.items.%Get(key).%Set(xofKey, {"$ref": ("#/components/schemas/" _ newSchemaName)})
-                        
+                        Do schemaItem.items.%Get(key).%Set(xofKey, {"$ref": (schemaRefToSet)})
                     }
                 }
             }
@@ -248,11 +259,14 @@ Method FlattenSchemasIns(currentObject As %DynamicObject, prefix As %String, ByR
                     Set newSchemaName = fullPath _ key _ xofKey
                     Do ..FlattenSchemasIns(xOfSchemaItem.properties, newSchemaName)
                     
-                    ; Créer un nouveau schéma pour l'élément de tableau
-                    Set newSchema = {}.%FromJSON(xOfSchemaItem.%ToJSON())
-                    
-                    ; Ajouter le nouveau schéma et référencer-le
-                    Do ..ToMove.%Set(newSchemaName, newSchema)
+                    Set newSchemaStr = xOfSchemaItem.%ToJSON(), hash = $ZCRC(newSchemaStr,7)
+                    If '$Data(..HashComponentsSchemas(hash), schemaRefToSet) {
+                        Set (schemaRefToSet,..HashComponentsSchemas(hash)) = "#/components/schemas/" _ newSchemaName
+                        ; Extraire l'objet de tableau comme un nouveau schéma
+                        Set newSchema = {}.%FromJSON(newSchemaStr)
+                        ; Add to the list of schemas to move
+                        Do ..ToMove.%Set(newSchemaName, newSchema)
+                    }
                     
                     ; Référencer le nouveau schéma
                     Do schemaItem.%Get(key).%Set(xofKey, {"$ref": ("#/components/schemas/" _ newSchemaName)})

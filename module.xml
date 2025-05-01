@@ -53,6 +53,10 @@
           <Name>swagger-validator-cli</Name>
           <Version>*</Version>
         </ModuleReference>
+        <ModuleReference>
+          <Name>yaml-utils</Name>
+          <Version>*</Version>
+        </ModuleReference>
       </Dependencies>
       <SystemRequirements Version=">=2020.1" Interoperability="enabled" />
     </Module>

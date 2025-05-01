@@ -1,4 +1,4 @@
-Class dc.openapi.common.RefScanner Extends %RegisteredObject
+Class dc.openapi.common.ReferenceAnalyzer Extends %RegisteredObject
 {
 
 Parameter SEPARATOR = ".";
@@ -32,7 +32,7 @@ ClassMethod GetListOfRefs(oas As %DynamicObject, internal As %Boolean = {$$$YES}
         }
         If external {
             If $Extract(reference)'="#" && '$Data(unique(" "_reference)) {
-                Set $List(list, *+1) =reference, unique(" "_reference) = ""
+                Set $List(list, *+1) = reference, unique(" "_reference) = ""
             }
         }
     }
@@ -64,20 +64,22 @@ ClassMethod ReferenceIsDefined(oas As %DynamicObject, ref As %String) As %Boolea
         Return $$$YES
     }
     
-    Set isDefined = $$$YES
-
     Set list = $ListFromString(subPart, "/"), ptr = 0, value = oas
     While $ListNext(list, ptr, key) {
-        If value.%IsDefined(key) {
-            Set value = value.%Get(key)
+        Try {
+            If value.%IsDefined(key) {
+                Set value = value.%Get(key)
+            }
+            Else {
+                Return $$$NO
+            }
         }
-        Else {
-            Set isDefined = $$$NO
-            Quit
+        Catch ex {
+            Return $$$NO
         }
     }
 
-    Return isDefined
+    Return $$$YES
 }
 
 ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, prefix As %String = "") As %Status

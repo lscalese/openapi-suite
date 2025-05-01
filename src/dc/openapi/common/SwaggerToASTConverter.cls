@@ -1,5 +1,5 @@
 /// This class transforms the OpenAPI Specification (OAS) to AST
-Class dc.openapi.common.Tranformer Extends %RegisteredObject
+Class dc.openapi.common.SwaggerToASTConverter Extends %RegisteredObject
 {
 
 Property OAS As %DynamicObject;
@@ -10,20 +10,16 @@ Property PackageModel As %String;
 
 Property Qualifiers As %String;
 
-Property Warnings As list Of %String;
-
 /// Index of the models
 Property ModelIDX As dc.openapi.common.ast.Model [ MultiDimensional ];
 
-Property ParmameterIDX As dc.openapi.common.ast.Parameter [ MultiDimensional ];
-
-/// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_components_schemas_allOf1.json"))
-/// d ##class(dc.openapi.common.Tranformer).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json"))
+/// d ##class(dc.openapi.common.SwaggerToASTConverter).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_components_schemas_allOf1.json"))
+/// d ##class(dc.openapi.common.SwaggerToASTConverter).Test({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json"))
 ClassMethod Test(oas = { {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas.json")}) As %Status
 {
     Set sc = $$$OK
 
-    Set t = ##class(dc.openapi.common.Tranformer).%New()
+    Set t = ##class(dc.openapi.common.SwaggerToASTConverter).%New()
     Set t.OAS = oas
     Set t.PackageModel = "myapp.models"
 
@@ -46,7 +42,7 @@ Method Transform() As %Status
     Set sc = $$$OK
 
     Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
-    Set ..AST.OpenAPI = ..OAS.openapi
+    ;Set ..AST.OpenAPI = ..OAS.openapi
     
     Do ..Info()
     Do ..Servers()
@@ -310,13 +306,16 @@ requestBody
         If '$IsObject(mimeItem) {
             Continue
         }
+        
 
         Set requestBody = ##class(dc.openapi.common.ast.RequestBody).%New()
         Set requestBody.ContentType = mimeType
         Set requestBody.Required = verbItem.requestBody.required
         Set requestBody.Description = verbItem.requestBody.description
 
-        Set modelProperty = ..GetModelProperty(verbItem.requestBody.content, mimeType)
+        ;Set modelProperty = ..GetModelProperty(verbItem.requestBody.content, mimeType)
+        Set modelProperty = ..GetModelProperty(mimeItem, "schema")
+        
         Set modelProperty.Name = ..GetPropertyNameByRef(mimeType)
         Set requestBody.ModelProperty = modelProperty
 
