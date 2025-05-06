@@ -33,4 +33,6 @@ Property Collection As %String;
 
 Property OASReference As %String;
 
+Property Description As %String;
+
 }

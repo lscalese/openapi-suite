@@ -15,7 +15,7 @@
             "get": {
                 "summary": "Get user configurations",
                 "description": "Retrieve all configuration settings for a specific user",
-                "operationId": "getUserConfigurations",
+                "operationId": "",
                 "parameters": [
                     {
                         "name": "userId",

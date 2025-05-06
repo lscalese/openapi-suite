@@ -8,3 +8,4 @@ openapi-test-specification.yml
 rbody.yaml
 zz/
 .vscode/settings.json
+.env

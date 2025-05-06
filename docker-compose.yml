@@ -5,10 +5,28 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    command: --check-caps false --ISCAgent false
+    command: --ISCAgent false -a /home/irisowner/irisdev/init_openapisuite.sh
+    environment:
+      - CONVERTER_URL=http://swagger-converter
+      - CONVERTER_PORT=8080
+      - VALIDATOR_URL=http://swagger-validator-v2
+      - VALIDATOR_PORT=8080
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     ports: 
       - 1972
-      - 52773
+      - 52796:52773
       - 53773
     volumes:
       - ./:/home/irisowner/irisdev
+  swagger-converter:
+    image: swaggerapi/swagger-converter:latest
+    restart: always
+    # optional, openapi-suite don't need port exposed
+    # ports:
+    #  - 8085:8080
+  swagger-validator-v2:
+    image: swaggerapi/swagger-validator-v2:latest
+    restart: always
+    # optional, openapi-suite don't need port exposed
+    # ports:
+    #  - 8086:8080

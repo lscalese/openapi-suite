@@ -5,7 +5,49 @@
     "description": "Example API with nested request bodies for flattening tests",
     "version": "1.0.0"
   },
-  "paths": {},
+  "paths": {
+    "/users": {
+      "post": {
+        "summary": "Create a new user",
+        "description": "Creates a new user with the provided information",
+        "operationId": "createUser",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CreateUserRequest"
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "username": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "409": {
+            "description": "User already exists"
+          }
+        },
+        "tags": ["Users"]
+      }
+    }
+  },
   "components": {
     "requestBodies": {
       "CreateUserRequest": {

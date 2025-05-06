@@ -40,6 +40,7 @@ ClassMethod GetListOfRefs(oas As %DynamicObject, internal As %Boolean = {$$$YES}
     Return list
 }
 
+/// in this case ref is a string look like : components.schemas.objectName.oneOf.1.$ref
 ClassMethod GetValue(oas As %DynamicObject, ref As %String) As %String
 {
     Set list = $ListFromString(ref, ..#SEPARATOR), ptr = 0
@@ -82,6 +83,29 @@ ClassMethod ReferenceIsDefined(oas As %DynamicObject, ref As %String) As %Boolea
     Return $$$YES
 }
 
+ClassMethod GetObjectByRef(currentDocument As %DynamicObject, ref As %String, documentCollection As dc.openapi.common.SwaggerDocumentCollection) As %DynamicObject
+{
+    Set document = currentDocument
+    Set externalPart = $Piece(ref, "#", 1)
+    If externalPart '= "" {
+        Set documentReference = documentCollection.GetItem(externalPart)
+        Set document = documentReference.Document
+    }
+    Return ##class(dc.openapi.common.ReferenceAnalyzer).GetObjectByDocumentAndRef(document, ref)
+}
+
+ClassMethod GetObjectByDocumentAndRef(document As %DynamicObject, ref As %String) As %DynamicObject
+{
+    Set subPart = $Piece(ref, "#/", 2)
+    Set list = $ListFromString(subPart, "/"), ptr = 0, value = document
+
+    While $ListNext(list, ptr, key) {
+        Set value = value.%Get(key) 
+    }
+
+    Return value
+}
+
 ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, prefix As %String = "") As %Status
 {
     #dim iterator As %Iterator.AbstractIterator
@@ -97,6 +121,14 @@ ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, pr
             Do ..CollectOASReferences(item, .out, ref_..#SEPARATOR)
         }
     }
+    Return $$$OK
+}
+
+ClassMethod DecomposeRef(ref As %String, Output externalPart As %String, Output internalPart As %String) As %Status
+{
+    Set (externalPart, internalPart) = ""
+    Set externalPart = $Piece(ref, "#", 1)
+    Set internalPart = $Piece(ref, "#/", 2)
     Return $$$OK
 }
 
