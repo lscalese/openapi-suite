@@ -106,14 +106,14 @@ Method GenerateRequestClassModel(path As dc.openapi.common.ast.Path) As %Status
     Set acceptProperty = ##class(%Dictionary.PropertyDefinition).%New()
     Set acceptProperty.Name = "%Accept"
     Set acceptProperty.Type = "%String"
-    Set acceptProperty.InitialExpression = "application/json"
+    Set acceptProperty.InitialExpression = """application/json"""
     Set acceptProperty.Description = "The Accept header for the operation, ex: application/json"
     Do requestClassModel.Properties.Insert(acceptProperty)
 
     Set contentTypeProperty = ##class(%Dictionary.PropertyDefinition).%New()
     Set contentTypeProperty.Name = "%ContentType"
     Set contentTypeProperty.Type = "%String"
-    Set contentTypeProperty.InitialExpression = "application/json"
+    Set contentTypeProperty.InitialExpression = """application/json"""
     Set contentTypeProperty.Description = "The Content-Type header for the operation, ex: application/json"
     Do requestClassModel.Properties.Insert(contentTypeProperty)
 
@@ -151,32 +151,23 @@ ClassMethod GetBuildRequestMethod(path As dc.openapi.common.ast.Path) As %String
         Quit:key=""
         
         If parameter.In = "path" {
-            Set inPath = ##class(%Dictionary.CompiledXData).%OpenId($classname() _ "||PathParameter").Data.Read()
-            Set inPath = $Replace(inPath, "{{Name}}", parameter.Name)
-            Set inPath = $Replace(inPath, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
-            Set PathParameterCode = PathParameterCode _ inPath
+            Set style = $s(parameter.Style="":"simple",1:parameter.Style)
+            Set explode = parameter.Explode = 1
+            Set type = $Select(parameter.ModelProperty.Collection="list":"array",parameter.ModelProperty.IsDatatype:"datatype",1:"object")
+            Set PathParameterTemplate = ..GetTemplate(..DecisionTemplatePathParameter(type, style, explode))
+            Set PathParameterTemplate = $Replace(PathParameterTemplate, "{{Name}}", parameter.Name)
+            Set PathParameterTemplate = $Replace(PathParameterTemplate, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
+            Set PathParameterCode = PathParameterCode _ PathParameterTemplate
         }
     }
 
-    Set buildRequestTemplate = ##class(%Dictionary.CompiledXData).%OpenId($classname() _ "||BuildRequest").Data.Read()
-
+    Set buildRequestTemplate = ..GetTemplate("BuildRequest")
     Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{PathParameterCode}}", $zstrip(PathParameterCode,"<W"))
     Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{QueryParameterCode}}", QueryParameterCode)
     Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{HeaderParameterCode}}", HeaderParameterCode)
-
     Do methodDefinition.Implementation.Write(buildRequestTemplate)
 
     Return methodDefinition
-}
-
-ClassMethod t()
-{
-    Set decision("datatype", "simple", "explode=false") = "PathParameterDatatypeSimple"
-    Set decision("datatype", "simple", "explode=true") = "PathParameterDatatypeSimpleExplode"
-    Set decision("array", "simple", "explode=false") = "PathParameterArraySimple"
-    Set decision("array", "simple", "explode=true") = "PathParameterArraySimpleExplode"
-    Set decision("object", "simple", "explode=false") = "PathParameterObjectSimple"
-    Set decision("object", "simple", "explode=true") = "PathParameterObjectSimpleExplode"
 }
 
 XData %PrepareMethod [ MimeType = plain/text ]
@@ -206,31 +197,56 @@ XData BuildRequest [ MimeType = plain/text ]
     {{HeaderParameterCode}}
 }
 
-/// template for path parameters style = simple, explode = false
+ClassMethod GetTemplate(XDataName As %String) As %String
+{
+    Set id = $classname() _ "||" _ XDataName
+    If '##class(%Dictionary.CompiledXData).%ExistsId(id) {
+        Return ""
+    }
+    Set template = ##class(%Dictionary.CompiledXData).%OpenId(id).Data.Read()
+    Return template
+}
+
+ClassMethod DecisionTemplatePathParameter(type As %String, style As %String, explode As %Boolean) As %String
+{
+    Set type = $$$LOWER(type), style = $$$LOWER(style), explode = $Select(explode:"explode=true",1:"explode=false")
+
+    Set decision("datatype", "simple", "explode=false") = "PathParameterDatatypeSimple"
+    Set decision("datatype", "simple", "explode=true") = "PathParameterDatatypeSimple"
+    Set decision("array", "simple", "explode=false") = "PathParameterArraySimple"
+    Set decision("array", "simple", "explode=true") = "PathParameterArraySimple"
+    Set decision("object", "simple", "explode=false") = "PathParameterObjectSimple"
+    Set decision("object", "simple", "explode=true") = "PathParameterObjectSimpleExplode"
+
+    Set decision("datatype", "label", "explode=false") = "PathParameterDatatypeLabel"
+    Set decision("datatype", "label", "explode=true") = "PathParameterDatatypeLabel"
+    Set decision("array", "label", "explode=false") = "PathParameterArrayLabel"
+    Set decision("array", "label", "explode=true") = "PathParameterArrayLabelExplode"
+    Set decision("object", "label", "explode=false") = "PathParameterObjectLabel"
+    Set decision("object", "label", "explode=true") = "PathParameterObjectLabelExplode"
+    
+    Set decision("datatype", "matrix", "explode=false") = "PathParameterDatatypeMatrix"
+    Set decision("datatype", "matrix", "explode=true") = "PathParameterDatatypeMatrix"
+    Set decision("array", "matrix", "explode=false") = "PathParameterArrayMatrix"
+    Set decision("array", "matrix", "explode=true") = "PathParameterArrayMatrixExplode"
+    Set decision("object", "matrix", "explode=false") = "PathParameterObjectMatrix"
+    Set decision("object", "matrix", "explode=true") = "PathParameterObjectMatrixExplode"
+
+    Return $Get(decision(type, style, explode))
+}
+
+/// --- simple
+/// template for path parameters style = simple, (explode = false or explode = true)
 XData PathParameterDatatypeSimple [ MimeType = plain/text ]
 {
     Set ..Path = $Replace(..Path, "{{{Name}}}", ..{{ModelProperty.Name}})
 }
 
-/// template for path parameters style = simple, explode = true
-XData PathParameterDatatypeSimpleExplode [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{{{Name}}*}", ..{{ModelProperty.Name}})
-}
-
-/// template for path parameters array style = simple, explode = false
+/// template for path parameters array style = simple, (explode = false or explode = true)
 XData PathParameterArraySimple [ MimeType = plain/text ]
 {
     Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
     Set ..Path = $Replace(..Path, "{{{Name}}}", $ListToString($List(tmpList)))
-    Kill tmpList
-}
-
-/// template for path parameters array style = simple, explode = false
-XData PathParameterArraySimpleExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}*}", $ListToString($List(tmpList)))
     Kill tmpList
 }
 
@@ -252,44 +268,86 @@ XData PathParameterObjectSimpleExplode [ MimeType = plain/text ]
     Kill tmp
 }
 
-/// -------template for path parameters style = label, explode = false
-XData PathParameterLabel [ MimeType = plain/text ]
+/// --- label
+/// template for path parameters style = label, explode = false
+XData PathParameterDatatypeLabel [ MimeType = plain/text ]
 {
-    Set ..Path = $Replace(..Path, "{.{{Name}}}", "."_..{{ModelProperty.Name}})
-}
-
-/// template for path parameters style = label, explode = true
-XData PathParameterLabelExplode [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{.{{Name}}*}", "."_..{{ModelProperty.Name}})
-}
-
-/// template for path parameters style = matrix, explode = false
-XData PathParameterMatrix [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{;{{Name}}}", ";{{Name}}="_..{{ModelProperty.Name}})
-}
-
-/// template for path parameters style = matrix, explode = true
-XData PathParameterMatrixExplode [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{;{{Name}}*}", ";{{Name}}="_..{{ModelProperty.Name}})
+    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_..{{ModelProperty.Name}})
 }
 
 /// template for path parameters array style = label, explode = false
 XData PathParameterArrayLabel [ MimeType = plain/text ]
 {
     Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{.{{Name}}}", "."_$ListToString($List(tmpList)))
+    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_$ListToString($List(tmpList)))
     Kill tmpList
+}
+
+/// template for path parameters array style = label, explode = false
+XData PathParameterArrayLabelExplode [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
+    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_$ListToString($List(tmpList),"."))
+    Kill tmpList
+}
+
+///  template for path parameters object style = label, explode = false
+XData PathParameterObjectLabel [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
+    Set tmp = $tr($e(tmp,2,*-1),":""",",")
+    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_tmp)
+    Kill tmp
+}
+
+///  template for path parameters object style = label, explode = true
+XData PathParameterObjectLabelExplode [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
+    Set tmp = $tr($e(tmp,2,*-1),":""","=")
+    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_tmp)
+    Kill tmp
+}
+
+/// --- matrix
+/// template for path parameters style = matrix, (explode = false or explode=true)
+XData PathParameterDatatypeMatrix [ MimeType = plain/text ]
+{
+    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_..{{ModelProperty.Name}})
 }
 
 /// template for path parameters array style = matrix, explode = false
 XData PathParameterArrayMatrix [ MimeType = plain/text ]
 {
     Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{;{{Name}}}", ";{{Name}}="_$ListToString($List(tmpList)))
+    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_$ListToString($List(tmpList)))
     Kill tmpList
+}
+
+/// template for path parameters array style = simple, explode = false
+XData PathParameterArrayMatrixExplode [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
+    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_$ListToString($List(tmpList),";{{Name}}="))
+    Kill tmpList
+}
+
+///  template for path parameters object style = simple, explode = false
+XData PathParameterObjectMatrix [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
+    Set tmp = $tr($e(tmp,2,*-1),":""",",")
+    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_tmp)
+    Kill tmp
+}
+
+///  template for path parameters object style = simple, explode = true
+XData PathParameterObjectMatrixExplode [ MimeType = plain/text ]
+{
+    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
+    Set tmp = $tr($e(tmp,2,*-1),":""","=")
+    Set ..Path = $Replace(..Path, "{{{Name}}}", ";"_tmp)
+    Kill tmp
 }
 
 }

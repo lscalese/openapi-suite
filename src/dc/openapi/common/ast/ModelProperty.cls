@@ -35,4 +35,7 @@ Property OASReference As %String;
 
 Property Description As %String;
 
+/// Helper for the code generation
+Property IsDatatype As %Boolean [ InitialExpression = 0 ];
+
 }

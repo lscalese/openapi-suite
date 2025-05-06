@@ -249,6 +249,7 @@ Method GetModelProperty(parentObj As %DynamicObject, name As %String) As dc.open
     }
     Else {
         Set modelProperty.Type = ..GetObjectScriptType(schema.type, schema.format)
+        Set modelProperty.IsDatatype = $$$YES
     }
 
     Set:common.%IsDefined("minimum") modelProperty.pMinimum = common.minimum
