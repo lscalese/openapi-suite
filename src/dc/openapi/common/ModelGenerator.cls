@@ -31,7 +31,7 @@ Method GenerateModel(model As dc.openapi.common.ast.Model) As %Status
     Set classDef = ##class(%Dictionary.ClassDefinition).%New()
     Set classDef.Name = model.Name
     Set classDef.Super = model.Super _ $Select(..AddSuperClass'="" : "," _ ..AddSuperClass, 1: "")
-    Set classDef.Description = $REPLACE($ZSTRIP($ZSTRIP(model.Description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
+    Set classDef.Description = ##class(dc.openapi.common.Utils).FormatDescription(model.Description)
     Set classDef.Inheritance = "left"
     Set classDef.ProcedureBlock = $$$YES
 
@@ -62,7 +62,7 @@ ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelPropert
     Set propDef = ##class(%Dictionary.PropertyDefinition).%New()
     Set propDef.Name = property.Name
     Set propDef.Type = property.Type
-    Set propDef.Description = $REPLACE($ZSTRIP($ZSTRIP(property.Description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
+    Set propDef.Description = ##class(dc.openapi.common.Utils).FormatDescription(property.Description)
     Set:property.Collection'="" propDef.Collection = property.Collection
 
     Do:property.pMaxLength'="" propDef.Parameters.SetAt(property.pMaxLength,"MAXLEN")        

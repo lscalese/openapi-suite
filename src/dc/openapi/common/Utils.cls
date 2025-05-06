@@ -256,6 +256,12 @@ ClassMethod KillTempData(key As %String = "") As %Status
     Quit $$$OK
 }
 
+/// Format comment for class, method or property
+ClassMethod FormatDescription(description As %String) As %String
+{
+    Return $REPLACE($ZSTRIP($ZSTRIP(description, "*", $Char(13)), "<>CW"), $Char(10), $Char(10) _ "/// ")
+}
+
 ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = "") As %String
 {
 

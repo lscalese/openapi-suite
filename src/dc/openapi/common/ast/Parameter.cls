@@ -16,4 +16,8 @@ Property Required As %Boolean;
 
 Property ModelProperty As dc.openapi.common.ast.ModelProperty;
 
+Property Style As %String;
+
+Property Explode As %Boolean;
+
 }
