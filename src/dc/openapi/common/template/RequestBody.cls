@@ -3,6 +3,12 @@ Class dc.openapi.common.template.RequestBody Extends dc.openapi.common.template.
 
 ClassMethod GetTemplateByRB(requestBody As dc.openapi.common.ast.RequestBody) As %String
 {
+
+    ;Set decision("mimeType", "type") = ""
+    Set decision("application/x-www-form-urlencoded", "object") = "todo"
+    Set decision("application/x-www-form-urlencoded", "stream") = "todo"
+    Set decision("application/x-www-form-urlencoded", "datatype") = "todo"
+
     If requestBody.ModelProperty.TypeHelper = "stream" {
         Return ..ByName("Stream")
     }
@@ -19,7 +25,14 @@ ClassMethod GetTemplateByRB(requestBody As dc.openapi.common.ast.RequestBody) As
 
 ClassMethod Decision() As %String
 {
-    Return ""
+    Set decision("array=false","*JSON*", "object") = "JSON"
+    Set decision("array=true","*JSON*", "object") = "JSONList"
+    
+    Set decision("application/x-www-form-urlencoded", "object") = "todo"
+    Set decision("application/x-www-form-urlencoded", "stream") = "Stream"
+    Set decision("application/x-www-form-urlencoded", "datatype") = "todo"
+
+    Set decision("multipart/form-data", "stream") = "todo"
 }
 
 XData JSON [ MimeType = text/plain ]
