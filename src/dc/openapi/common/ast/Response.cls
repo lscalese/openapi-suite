@@ -4,11 +4,11 @@ Class dc.openapi.common.ast.Response Extends (%JSON.Adaptor, %RegisteredObject)
 
 Property StatusCode As %String;
 
-Property Description As %String;
+Property Description As %String(MAXLEN = 32000);
 
 Property ContentType As %String;
 
-Property Example As %String;
+Property Example As %String(MAXLEN = 32000);
 
 Property ModelProperty As dc.openapi.common.ast.ModelProperty;
 

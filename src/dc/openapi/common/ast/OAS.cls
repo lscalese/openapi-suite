@@ -29,6 +29,6 @@ Property Models As list Of dc.openapi.common.ast.Model;
 /// external reference used by other OpenAPI Specification that refers to this OAS
 /// ex: $ref: 'http://example.com/common.json#/components/schemas/Pet'
 /// The ExternalReference property must be set with the value before "#"
-Property ExternalReference As %String;
+Property ExternalReference As %String(MAXLEN = 32000);
 
 }

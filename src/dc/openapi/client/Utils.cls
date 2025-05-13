@@ -126,37 +126,4 @@ ClassMethod log(msg As %String, nl As %Boolean = {$$$YES}, dtOnNL As %Boolean = 
     Quit
 }
 
-/// Determine if a given mimetype represents JSON content
-/// @param mimetype The MIME type to check (e.g., "application/json", "application/vnd.api+json")
-/// @return Returns 1 if the mimetype is JSON-related, 0 otherwise
-ClassMethod isJsonMimeType(mimetype As %String) As %Boolean
-{
-    // Normalize: convert to lowercase and trim
-    Set mimetype = $ZCONVERT($ZSTRIP(mimetype, "<>W"), "L")
-    
-    // Standard JSON mimetypes
-    If mimetype = "application/json" Quit 1
-    If mimetype = "text/json" Quit 1
-    
-    // JSON with suffixes (RFC 6839)
-    If $EXTRACT(mimetype, 1, 12) = "application/" && ($FIND(mimetype, "+json") > 0) Quit 1
-    If $EXTRACT(mimetype, 1, 5) = "text/" && ($FIND(mimetype, "+json") > 0) Quit 1
-    
-    // Vendor specific JSON formats
-    If $MATCH(mimetype, "application/vnd\..*[+]json") Quit 1
-    If $MATCH(mimetype, "application/.*[+]json") Quit 1
-    
-    // Common specific JSON types
-    If mimetype = "application/problem+json" Quit 1
-    If mimetype = "application/geo+json" Quit 1
-    If mimetype = "application/ld+json" Quit 1
-    If mimetype = "application/json-patch+json" Quit 1
-    If mimetype = "application/merge-patch+json" Quit 1
-    If mimetype = "application/schema+json" Quit 1
-    If mimetype = "application/hal+json" Quit 1
-    
-    // Not a JSON mimetype
-    Quit 0
-}
-
 }

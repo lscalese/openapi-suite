@@ -4,10 +4,10 @@ Class dc.openapi.common.ast.RequestBody Extends (%JSON.Adaptor, %RegisteredObjec
 
 Property Required As %Boolean;
 
-Property ContentType As %String;
+Property ContentType As %String(MAXLEN = 256);
 
 Property ModelProperty As dc.openapi.common.ast.ModelProperty;
 
-Property Description As %String;
+Property Description As %String(MAXLEN = 32000);
 
 }

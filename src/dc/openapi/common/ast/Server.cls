@@ -2,8 +2,8 @@
 Class dc.openapi.common.ast.Server Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
-Property Url As %String;
+Property Url As %String(MAXLEN = 1024);
 
-Property Description As %String;
+Property Description As %String(MAXLEN = 32000);
 
 }

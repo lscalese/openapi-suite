@@ -1,11 +1,50 @@
 Class dc.openapi.client.HttpRequestGenerator Extends %RegisteredObject
 {
 
+Parameter HTTPREQUESTOBJECT = "httpRequest";
+
+Parameter REQUESTSUBPKG = "request";
+
+Parameter RESPONSESUBPKG = "response";
+
 Property AST As dc.openapi.common.ast.OAS;
 
 Property Package As %String [ InitialExpression = "testclient" ];
 
 Property httpClientClass As %Dictionary.ClassDefinition [ Private ];
+
+ClassMethod Test() As %Status
+{
+    TRollback
+    TStart
+
+    Set sc = $$$OK
+    
+    Try {
+        ;Set dir = "/home/irisowner/irisdev/temp-dev-specs/ast-parameter/"
+        ;Set file = "ast-path-parameter-array-matrix-explode.json"
+        Set dir = "/home/irisowner/irisdev/temp-dev-specs/"
+        Set file = "AST-1.json"
+        
+        
+        Set jsonObject = {}.%FromJSONFile(dir _ file)
+
+        Set generator = ..%New()
+        Set generator.Package = "testclient"
+        Set generator.AST = ##class(dc.openapi.common.ast.OAS).%New()
+        $$$TOE(sc,generator.AST.%JSONImport(jsonObject))
+        $$$TOE(sc,generator.Generate())
+    } 
+    Catch ex {
+        Set sc = ex.AsStatus()
+        If $$$ISERR(sc) {
+            Write !
+            Do $SYSTEM.Status.DisplayError(sc)
+        }
+    }
+    
+    Return sc
+}
 
 Method Generate() As %Status
 {
@@ -16,7 +55,11 @@ Method Generate() As %Status
         Set path = ..AST.Paths.GetNext(.key)
         Quit:key=""
         Set sc = $$$ADDSC(sc, ..GenerateRequestClassModel(path))
+
+        Set operationMethod = ..GetOperationMethod(path)
+        Do ..httpClientClass.Methods.Insert(operationMethod)
     }
+    Set sc = ..httpClientClass.%Save()
     Return sc
 }
 
@@ -88,7 +131,7 @@ Method GenerateRequestClassModel(path As dc.openapi.common.ast.Path) As %Status
     Set requestClassModel.ProcedureBlock = $$$YES
     Set requestClassModel.Inheritance = "left"
     Set requestClassModel.Super = "%RegisteredObject"
-    Set requestClassModel.Name = ..Package _ ".request." _ path.OperationId
+    Set requestClassModel.Name = ..GetRequestObjectClassName(path)
 
     Set pathParameter = ##class(%Dictionary.ParameterDefinition).%New()
     Set pathParameter.Name = "PATH"
@@ -97,27 +140,27 @@ Method GenerateRequestClassModel(path As dc.openapi.common.ast.Path) As %Status
     Do requestClassModel.Parameters.Insert(pathParameter)
 
     Set pathProperty = ##class(%Dictionary.PropertyDefinition).%New()
-    Set pathProperty.Name = "Path"
+    Set pathProperty.Name = "%Path"
     Set pathProperty.Type = "%String"
     Set pathProperty.InitialExpression = "..#PATH"
     Set pathProperty.Description = "The resolved path for the operation, ex: /user/{userId} --> /user/1"
     Do requestClassModel.Properties.Insert(pathProperty)
 
+    Set acceptList = ..GetAcceptList(path.Responses)
     Set acceptProperty = ##class(%Dictionary.PropertyDefinition).%New()
     Set acceptProperty.Name = "%Accept"
     Set acceptProperty.Type = "%String"
-    Set acceptProperty.InitialExpression = """application/json"""
-    Set acceptProperty.Description = "The Accept header for the operation, ex: application/json"
+    Set acceptProperty.InitialExpression = """"_$ListGet(acceptList,1)_""""
+    Set acceptProperty.Description = "The Accept header for the operation. " _ $ListToString(acceptList,", ")
     Do requestClassModel.Properties.Insert(acceptProperty)
 
+    Set contentTypeList = ..GetContentTypeList(path.RequestBodies)
     Set contentTypeProperty = ##class(%Dictionary.PropertyDefinition).%New()
     Set contentTypeProperty.Name = "%ContentType"
     Set contentTypeProperty.Type = "%String"
-    Set contentTypeProperty.InitialExpression = """application/json"""
-    Set contentTypeProperty.Description = "The Content-Type header for the operation, ex: application/json"
+    Set contentTypeProperty.InitialExpression = """"_$ListGet(contentTypeList,1)_""""
+    Set contentTypeProperty.Description = "The Content-Type header for the operation.  "_ $ListToString(contentTypeList,", ")
     Do requestClassModel.Properties.Insert(contentTypeProperty)
-
-
 
     #dim parameter As dc.openapi.common.ast.Parameter
     Set key = ""
@@ -129,6 +172,18 @@ Method GenerateRequestClassModel(path As dc.openapi.common.ast.Path) As %Status
         Do requestClassModel.Properties.Insert(propertyDef)
     }
 
+    Set key = ""
+    For  {
+        Set requestBody = path.RequestBodies.GetNext(.key)
+        Quit:key=""
+
+        Set requestBodyPropDef = ##class(dc.openapi.common.ModelGenerator).GetPropertyDefinition(requestBody.ModelProperty)
+        If '$Data(createdRequestBody(" "_requestBodyPropDef.Type)) { ; avoid duplicate request body objects if it's the same type
+            Set createdRequestBody(" "_requestBodyPropDef.Type) = requestBodyPropDef
+            Do requestClassModel.Properties.Insert(requestBodyPropDef) 
+        }
+    }
+
     Do requestClassModel.Methods.Insert(..GetBuildRequestMethod(path))
 
     Return requestClassModel.%Save()
@@ -137,37 +192,107 @@ Method GenerateRequestClassModel(path As dc.openapi.common.ast.Path) As %Status
 ClassMethod GetBuildRequestMethod(path As dc.openapi.common.ast.Path) As %String
 {
     Set methodDefinition = ##class(%Dictionary.MethodDefinition).%New()
-    Set methodDefinition.Name = "BuildRequest"
+    Set methodDefinition.Name = "%BuildRequest"
     Set methodDefinition.Description = "Build the HTTP request for the operation"
     Set methodDefinition.ReturnType = "%Status"
-    Set methodDefinition.FormalSpec= "&httpRequest:%Net.HttpRequest"
+    Set methodDefinition.FormalSpec= "&"_..#HTTPREQUESTOBJECT_":%Net.HttpRequest"
 
     #dim parameter As dc.openapi.common.ast.Parameter
-    Set PathParameterCode = "", QueryParameterCode = "", HeaderParameterCode = ""
+    Set PathParameterCode = "", QueryParameterCode = "", HeaderParameterCode = "", CookieParameterCode = "", RequestBodiesCode = ""
     
     Set key = ""
     For  {
         Set parameter = path.Parameters.GetNext(.key)
         Quit:key=""
         
+        Set type = $Select(parameter.ModelProperty.Collection="list":"array",1:parameter.ModelProperty.TypeHelper)
+            
         If parameter.In = "path" {
-            Set style = $s(parameter.Style="":"simple",1:parameter.Style)
-            Set explode = parameter.Explode = 1
-            Set type = $Select(parameter.ModelProperty.Collection="list":"array",parameter.ModelProperty.IsDatatype:"datatype",1:"object")
-            Set PathParameterTemplate = ..GetTemplate(..DecisionTemplatePathParameter(type, style, explode))
+            Set style = $s(parameter.Style="":"simple",1:parameter.Style)   ; default is simple
+            Set explode = parameter.Explode = 1                             ; default is false
+            Set PathParameterTemplate = ##class(dc.openapi.common.template.PathParameters).GetTemplate(type, style, explode)
             Set PathParameterTemplate = $Replace(PathParameterTemplate, "{{Name}}", parameter.Name)
             Set PathParameterTemplate = $Replace(PathParameterTemplate, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
             Set PathParameterCode = PathParameterCode _ PathParameterTemplate
         }
+        ElseIf parameter.In = "query" {
+            Set style = $s(parameter.Style="":"form", 1:parameter.Style)    ; default is form
+            Set explode = $s(parameter.Explode="": 1, 1:parameter.Explode)  ; default is true
+            Set QueryParameterTemplate = ##class(dc.openapi.common.template.QueryParameters).GetTemplate(type, style, explode)
+            Set QueryParameterTemplate = $Replace(QueryParameterTemplate, "{{Name}}", parameter.Name)
+            Set QueryParameterTemplate = $Replace(QueryParameterTemplate, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
+            Set QueryParameterCode = QueryParameterCode _ QueryParameterTemplate
+        }
+        ElseIf parameter.In = "header" {
+            Set style = $s(parameter.Style="":"simple", 1:parameter.Style)  ; default is simple
+            Set explode = parameter.Explode = 1                             ; default is false
+            Set HeaderParameterTemplate = ##class(dc.openapi.common.template.HeaderParameters).GetTemplate(type, style, explode)
+            Set HeaderParameterTemplate = $Replace(HeaderParameterTemplate, "{{Name}}", parameter.Name)
+            Set HeaderParameterTemplate = $Replace(HeaderParameterTemplate, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
+            Set HeaderParameterCode = HeaderParameterCode _ HeaderParameterTemplate
+        }
+        ElseIf parameter.In = "cookie" {
+            Set style = $s(parameter.Style="":"form", 1:parameter.Style)    ; default is form
+            Set explode = $s(parameter.Explode="": 1, 1:parameter.Explode)  ; default is true
+            Set CookieParameterTemplate = ##class(dc.openapi.common.template.CookieParameters).GetTemplate(type, style, explode)
+            Set CookieParameterTemplate = $Replace(CookieParameterTemplate, "{{Name}}", parameter.Name)
+            Set CookieParameterTemplate = $Replace(CookieParameterTemplate, "{{ModelProperty.Name}}", parameter.ModelProperty.Name)
+            Set CookieParameterCode = CookieParameterCode _ CookieParameterTemplate
+        }
     }
 
-    Set buildRequestTemplate = ..GetTemplate("BuildRequest")
+    #dim requestBody As dc.openapi.common.ast.RequestBody
+    Set key = ""
+    For  {
+        Set requestBody = path.RequestBodies.GetNext(.key)
+        Quit:key=""
+
+        If ##class(dc.openapi.common.Utils).isJsonMimeType(requestBody.ContentType) {
+            Set RequestBodiesTemplate = ##class(dc.openapi.common.template.RequestBody).ByName("JSON")
+            Set RequestBodiesTemplate = $Replace(RequestBodiesTemplate, "{{ContentType}}", requestBody.ContentType)
+            Set RequestBodiesTemplate = $Replace(RequestBodiesTemplate, "{{ModelProperty.Name}}", requestBody.ModelProperty.Name)
+            Set RequestBodiesCode = RequestBodiesCode _ RequestBodiesTemplate
+        } 
+    }
+
+    Set buildRequestTemplate = ..GetTemplateByName("BuildRequest")
     Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{PathParameterCode}}", $zstrip(PathParameterCode,"<W"))
-    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{QueryParameterCode}}", QueryParameterCode)
-    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{HeaderParameterCode}}", HeaderParameterCode)
+    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{QueryParameterCode}}", $zstrip(QueryParameterCode,"<W"))
+    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{HeaderParameterCode}}", $zstrip(HeaderParameterCode,"<W"))
+    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{CookieParameterCode}}", $zstrip(CookieParameterCode,"<W"))
+    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{RequestBodies}}", $zstrip(RequestBodiesCode,"<W"))
+
+    
+    Set buildRequestTemplate = $Replace(buildRequestTemplate, "{{httpRequestObject}}", $zstrip(..#HTTPREQUESTOBJECT,"<W"))
+    
     Do methodDefinition.Implementation.Write(buildRequestTemplate)
 
     Return methodDefinition
+}
+
+Method GetOperationMethod(path As dc.openapi.common.ast.Path) As %Dictionary.MethodDefinition
+{
+    Set methodDefinition = ##class(%Dictionary.MethodDefinition).%New()
+    Set methodDefinition.Name = path.OperationId
+    Set methodDefinition.Description = "Build the HTTP request for the operation"
+    Set methodDefinition.ReturnType = "%Status"
+
+    Set requestObject = ..GetRequestObjectClassName(path)
+    Set requestModel = $Piece(requestObject, ".", *)
+    Set methodDefinition.FormalSpec= requestModel_":" _ requestObject
+
+    Set template = ..GetTemplateByName("OperationMethod")
+    Set template = $Replace(template, "{{requestModel}}", requestModel)
+    Set template = $Replace(template, "{{httpRequestObject}}", ..#HTTPREQUESTOBJECT)
+
+    Do methodDefinition.Implementation.Write(template)
+
+    Return methodDefinition
+}
+
+Method GetRequestObjectClassName(path As dc.openapi.common.ast.Path) As %String [ CodeMode = expression ]
+{
+..Package _ "." _ ..#REQUESTSUBPKG _ "." _ path.OperationId
 }
 
 XData %PrepareMethod [ MimeType = plain/text ]
@@ -182,22 +307,19 @@ XData %PrepareMethod [ MimeType = plain/text ]
     Return $$$OK
 }
 
-XData BuildRequest [ MimeType = plain/text ]
+XData OperationMethod [ MimeType = plain/text ]
 {
-    // Initialisation de base de la requête
-    Set ..Path = ..#PATH
-    
-    // Traitement des path parameters
-    {{PathParameterCode}}
-    
-    // Traitement des query parameters
-    {{QueryParameterCode}}
-    
-    // Traitement des header parameters
-    {{HeaderParameterCode}}
+    Set sc = $$$OK
+    Try {
+        $$$TOE(sc,{{requestModel}}.%BuildRequest(..HttpRequest))
+    }
+    Catch ex {
+        Set sc = ex.AsStatus()
+    }
+    Return sc
 }
 
-ClassMethod GetTemplate(XDataName As %String) As %String
+ClassMethod GetTemplateByName(XDataName As %String) As %String
 {
     Set id = $classname() _ "||" _ XDataName
     If '##class(%Dictionary.CompiledXData).%ExistsId(id) {
@@ -207,147 +329,53 @@ ClassMethod GetTemplate(XDataName As %String) As %String
     Return template
 }
 
-ClassMethod DecisionTemplatePathParameter(type As %String, style As %String, explode As %Boolean) As %String
+ClassMethod GetContentTypeList(requestBodies As %ListOfObjects) As %String
 {
-    Set type = $$$LOWER(type), style = $$$LOWER(style), explode = $Select(explode:"explode=true",1:"explode=false")
-
-    Set decision("datatype", "simple", "explode=false") = "PathParameterDatatypeSimple"
-    Set decision("datatype", "simple", "explode=true") = "PathParameterDatatypeSimple"
-    Set decision("array", "simple", "explode=false") = "PathParameterArraySimple"
-    Set decision("array", "simple", "explode=true") = "PathParameterArraySimple"
-    Set decision("object", "simple", "explode=false") = "PathParameterObjectSimple"
-    Set decision("object", "simple", "explode=true") = "PathParameterObjectSimpleExplode"
-
-    Set decision("datatype", "label", "explode=false") = "PathParameterDatatypeLabel"
-    Set decision("datatype", "label", "explode=true") = "PathParameterDatatypeLabel"
-    Set decision("array", "label", "explode=false") = "PathParameterArrayLabel"
-    Set decision("array", "label", "explode=true") = "PathParameterArrayLabelExplode"
-    Set decision("object", "label", "explode=false") = "PathParameterObjectLabel"
-    Set decision("object", "label", "explode=true") = "PathParameterObjectLabelExplode"
-    
-    Set decision("datatype", "matrix", "explode=false") = "PathParameterDatatypeMatrix"
-    Set decision("datatype", "matrix", "explode=true") = "PathParameterDatatypeMatrix"
-    Set decision("array", "matrix", "explode=false") = "PathParameterArrayMatrix"
-    Set decision("array", "matrix", "explode=true") = "PathParameterArrayMatrixExplode"
-    Set decision("object", "matrix", "explode=false") = "PathParameterObjectMatrix"
-    Set decision("object", "matrix", "explode=true") = "PathParameterObjectMatrixExplode"
-
-    Return $Get(decision(type, style, explode))
+    Set contentTypeList = ""
+    #dim requestBody As dc.openapi.common.ast.RequestBody
+    Set key = ""
+    For  {
+        Set requestBody = requestBodies.GetNext(.key)
+        Quit:key=""
+        If requestBody.ContentType'="" {
+            Set $List(contentTypeList, *+1) = requestBody.ContentType
+        }
+    }
+    Return contentTypeList
 }
 
-/// --- simple
-/// template for path parameters style = simple, (explode = false or explode = true)
-XData PathParameterDatatypeSimple [ MimeType = plain/text ]
+ClassMethod GetAcceptList(responses As %ListOfObjects) As %String
 {
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ..{{ModelProperty.Name}})
+    Set contentTypeList = ""
+    #dim response As dc.openapi.common.ast.Response
+    Set key = ""
+    For  {
+        Set response = responses.GetNext(.key)
+        Quit:key=""
+        If response.ContentType'="" {
+            Set $List(contentTypeList, *+1) = response.ContentType
+        }
+    }
+    Return contentTypeList
 }
 
-/// template for path parameters array style = simple, (explode = false or explode = true)
-XData PathParameterArraySimple [ MimeType = plain/text ]
+XData BuildRequest [ MimeType = plain/text ]
 {
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}}", $ListToString($List(tmpList)))
-    Kill tmpList
-}
+    Set sc = $$$OK
+    Set ..%Path = ..#PATH
 
-///  template for path parameters object style = simple, explode = false
-XData PathParameterObjectSimple [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""",",")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", tmp)
-    Kill tmp
-}
+    /// Set http header
+    {{HeaderParameterCode}}
+    /// Set path parameters
+    {{PathParameterCode}}
+    /// Set query parameters
+    {{QueryParameterCode}}
+    /// Set cookie parameters
+    {{CookieParameterCode}}
+    /// Set request body
+    {{RequestBodies}}
 
-///  template for path parameters object style = simple, explode = true
-XData PathParameterObjectSimpleExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""","=")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", tmp)
-    Kill tmp
-}
-
-/// --- label
-/// template for path parameters style = label, explode = false
-XData PathParameterDatatypeLabel [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_..{{ModelProperty.Name}})
-}
-
-/// template for path parameters array style = label, explode = false
-XData PathParameterArrayLabel [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_$ListToString($List(tmpList)))
-    Kill tmpList
-}
-
-/// template for path parameters array style = label, explode = false
-XData PathParameterArrayLabelExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_$ListToString($List(tmpList),"."))
-    Kill tmpList
-}
-
-///  template for path parameters object style = label, explode = false
-XData PathParameterObjectLabel [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""",",")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_tmp)
-    Kill tmp
-}
-
-///  template for path parameters object style = label, explode = true
-XData PathParameterObjectLabelExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""","=")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", "."_tmp)
-    Kill tmp
-}
-
-/// --- matrix
-/// template for path parameters style = matrix, (explode = false or explode=true)
-XData PathParameterDatatypeMatrix [ MimeType = plain/text ]
-{
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_..{{ModelProperty.Name}})
-}
-
-/// template for path parameters array style = matrix, explode = false
-XData PathParameterArrayMatrix [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_$ListToString($List(tmpList)))
-    Kill tmpList
-}
-
-/// template for path parameters array style = simple, explode = false
-XData PathParameterArrayMatrixExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_$ListToString($List(tmpList),";{{Name}}="))
-    Kill tmpList
-}
-
-///  template for path parameters object style = simple, explode = false
-XData PathParameterObjectMatrix [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""",",")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ";{{Name}}="_tmp)
-    Kill tmp
-}
-
-///  template for path parameters object style = simple, explode = true
-XData PathParameterObjectMatrixExplode [ MimeType = plain/text ]
-{
-    Do ..{{ModelProperty.Name}}.%JSONExportToString(.tmp)
-    Set tmp = $tr($e(tmp,2,*-1),":""","=")
-    Set ..Path = $Replace(..Path, "{{{Name}}}", ";"_tmp)
-    Kill tmp
+    Return sc
 }
 
 }

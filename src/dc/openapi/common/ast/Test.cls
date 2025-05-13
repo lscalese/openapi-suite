@@ -4,6 +4,8 @@ Class dc.openapi.common.ast.Test Extends %RegisteredObject
 ClassMethod Test() As %Status
 {
     Try{
+        tro 
+        ts
         Set oasFile = ##class(%Stream.FileCharacter).%New()
         ;Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.json")
         Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.yaml")
@@ -33,10 +35,13 @@ ClassMethod Test() As %Status
         ;Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
         
         ;Do preparer.SetMainDocument(dataTypesStream)
+        ;Do preparer.SetMainDocument({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flatten.json"),{"modelPackage":"myapp"})
+        ; Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
+        
         Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapp"})
         Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml", {"modelPackage":"ssi"})
         Do preparer.AddDocument(errStream, "../common/error_response.yaml", {"modelPackage":"err"})
-        ;return 1
+        
         Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New()
         Set pp.DocumentCollection = preparer.GetDocumentCollection()
         
@@ -52,14 +57,9 @@ ClassMethod Test() As %Status
             $$$ThrowStatus(tSc)
         }
 
-
-        Do transformer.AST.%JSONExportToString(.astJSON)
-        Do ##class(%JSON.Formatter).%New().Format(astJSON)
-        ;Set document = pp.DocumentCollection.GetMainItem().Document
-        ;Do ##class(%JSON.Formatter).%New().Format(document)
-
         Set modelGenerator = ##class(dc.openapi.common.ModelGenerator).%New()
         Set modelGenerator.AST = transformer.AST
+        
         Set tsc = modelGenerator.Generate()
         If $$$ISERR(tsc) {
             $$$ThrowStatus(tsc)

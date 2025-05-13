@@ -290,4 +290,102 @@ ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = ""
     Quit $Get(table(oaType, format), $Get(table(oaType), "%VarString" ))
 }
 
+/// Determine if a given mimetype represents JSON content
+/// @param mimetype The MIME type to check (e.g., "application/json", "application/vnd.api+json")
+/// @return Returns 1 if the mimetype is JSON-related, 0 otherwise
+ClassMethod isJsonMimeType(mimetype As %String) As %Boolean
+{
+    // Normalize: convert to lowercase and trim
+    Set mimetype = $ZCONVERT($ZSTRIP(mimetype, "<>W"), "L")
+    
+    // Standard JSON mimetypes
+    If mimetype = "application/json" Quit 1
+    If mimetype = "text/json" Quit 1
+    
+    // JSON with suffixes (RFC 6839)
+    If $EXTRACT(mimetype, 1, 12) = "application/" && ($FIND(mimetype, "+json") > 0) Quit 1
+    If $EXTRACT(mimetype, 1, 5) = "text/" && ($FIND(mimetype, "+json") > 0) Quit 1
+    
+    // Vendor specific JSON formats
+    If $MATCH(mimetype, "application/vnd\..*[+]json") Quit 1
+    If $MATCH(mimetype, "application/.*[+]json") Quit 1
+    
+    // Common specific JSON types
+    If mimetype = "application/problem+json" Quit 1
+    If mimetype = "application/geo+json" Quit 1
+    If mimetype = "application/ld+json" Quit 1
+    If mimetype = "application/json-patch+json" Quit 1
+    If mimetype = "application/merge-patch+json" Quit 1
+    If mimetype = "application/schema+json" Quit 1
+    If mimetype = "application/hal+json" Quit 1
+    
+    // Not a JSON mimetype
+    Quit 0
+}
+
+/// Determine if a given mimetype represents XML content
+/// @param mimetype The MIME type to check (e.g., "application/xml", "text/xml", "application/atom+xml")
+/// @return Returns 1 if the mimetype is XML-related, 0 otherwise
+ClassMethod isXmlMimeType(mimetype As %String) As %Boolean
+{
+    // Normalize: convert to lowercase and trim
+    Set mimetype = $ZCONVERT($ZSTRIP(mimetype, "<>W"), "L")
+    
+    // Standard XML mimetypes
+    If mimetype = "application/xml" Quit 1
+    If mimetype = "text/xml" Quit 1
+    
+    // XML with suffixes (RFC 6839)
+    If $EXTRACT(mimetype, 1, 12) = "application/" && ($FIND(mimetype, "+xml") > 0) Quit 1
+    If $EXTRACT(mimetype, 1, 5) = "text/" && ($FIND(mimetype, "+xml") > 0) Quit 1
+    
+    // Vendor specific XML formats
+    If $MATCH(mimetype, "application/vnd\..*[+]xml") Quit 1
+    
+    // Common specific XML types
+    If mimetype = "application/atom+xml" Quit 1
+    If mimetype = "application/rss+xml" Quit 1
+    If mimetype = "application/xhtml+xml" Quit 1
+    If mimetype = "application/soap+xml" Quit 1
+    If mimetype = "application/xslt+xml" Quit 1
+    If mimetype = "application/mathml+xml" Quit 1
+    If mimetype = "application/voicexml+xml" Quit 1
+    If mimetype = "application/wsdl+xml" Quit 1
+    If mimetype = "application/svg+xml" Quit 1
+    
+    // Not an XML mimetype
+    Quit 0
+}
+
+ClassMethod DumpToFile(object As %RegisteredObject, fileName As %String, deleteIfExists As %Boolean = {$$$YES}) As %Status
+{
+    Set sc = $$$OK
+    Try {
+        Set directory = ##class(%File).GetDirectory(fileName)
+
+        If ##class(%File).DirectoryExists(directory) {
+            Do:##class(%File).Exists(fileName) ##class(%File).Delete(fileName)
+        }
+        Else {
+            Do ##class(%File).CreateDirectoryChain(directory)
+        }
+        
+        Set file = ##class(%Stream.FileCharacter).%New()
+        $$$TOE(sc,file.LinkToFile(fileName))
+        
+        If object.%IsA("%DynamicObject") {
+            Do object.%ToJSON(file)
+        } 
+        Else {
+            Do object.%JSONExportToStream(file)
+        }
+
+        Set sc =  file.%Save()
+    } Catch ex {
+        Set sc = ex.AsStatus()
+        Do $SYSTEM.Status.DisplayError(sc)
+    }
+    Return sc
+}
+
 }
