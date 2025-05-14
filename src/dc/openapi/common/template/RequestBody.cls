@@ -25,14 +25,31 @@ ClassMethod GetTemplateByRB(requestBody As dc.openapi.common.ast.RequestBody) As
 
 ClassMethod Decision() As %String
 {
-    Set decision("array=false","*JSON*", "object") = "JSON"
-    Set decision("array=true","*JSON*", "object") = "JSONList"
+    #dim requestBody As dc.openapi.common.ast.RequestBody = ""
+
+    Set name = ""
+    ; simple stream to add to the request body
+
+    ; content-type application/json (or other json mime types)
+    Set decision("array=false","json", "object") = "JSON"
+    Set decision("array=true","json", "object") = "JSONList"
     
-    Set decision("application/x-www-form-urlencoded", "object") = "todo"
+    ; x-www-form-urlencoded
+    Set decision("application/x-www-form-urlencoded", "object") = "JSONFormURLEncoded"
     Set decision("application/x-www-form-urlencoded", "stream") = "Stream"
-    Set decision("application/x-www-form-urlencoded", "datatype") = "todo"
+    
+    Set decision("application/x-www-form-urlencoded", "datatype") = "FormURLEncoded"
 
     Set decision("multipart/form-data", "stream") = "todo"
+
+
+    ; files
+    ; type = string & format = binary (or base64)
+    If requestBody.ModelProperty.TypeHelper = "stream" {
+        Set name = "Stream"
+    }
+
+    Return name
 }
 
 XData JSON [ MimeType = text/plain ]
@@ -64,6 +81,51 @@ XData Stream [ MimeType = text/plain ]
     If ..%ContentType = "{{ContentType}}" {
         Do {{ModelProperty.Name}}.Rewind()
         Do {{httpRequestObject}}.EntityBody.CopyFrom({{ModelProperty.Name}})
+    }
+}
+
+XData DataType [ MimeType = text/plain ]
+{
+    If ..%ContentType = "{{ContentType}}" {
+        Do {{httpRequestObject}}.EntityBody.Write({{ModelProperty.Name}})
+    }
+}
+
+XData JSONFormURLEncoded [ MimeType = text/plain ]
+{
+    If ..%ContentType = "{{ContentType}}" {
+        Do {{ModelProperty.Name}}.%JSONExportToString(.jsonString)
+        Set jsonObj = {}.%FromJSON(.jsonString)
+        Set iterator = jsonObj.%GetIterator()
+        While iterator.%GetNext(.name, .value) {
+            Do:{{httpRequestObject}}.EntityBody.Size>0 {{httpRequestObject}}.EntityBody.Write("&")
+            Do {{httpRequestObject}}.EntityBody.Write(name _ "=" _ $$$URLENCODE(value))
+        }
+        Kill iterator, jsonString, jsonObj, name, value
+    }
+}
+
+XData FormURLEncoded [ MimeType = text/plain ]
+{
+    If ..%ContentType = "{{ContentType}}" {
+        Do:{{httpRequestObject}}.EntityBody.Size>0 {{httpRequestObject}}.EntityBody.Write("&")
+        Do {{httpRequestObject}}.EntityBody.Write({{Name}} _ "=" _ $$$URLENCODE({{ModelProperty.Name}}))
+    }
+}
+
+XData FormDataStream [ MimeType = text/plain ]
+{
+    If ..%ContentType = "{{ContentType}}" {
+        Set valueStream = ##class(%Stream.GlobalBinary).%New()
+        Do valueStream.CopyFrom({{ModelProperty.Name}})
+        Set mParts = ##class(%Net.MIMEPart).%New()
+        Set mimePart = ##class(%Net.MIMEPart).%New(valueStream)
+        Do mimePart.SetHeader("Content-Disposition", "form-data; name=""{{Name}}""; filename=""{{Name}}""")
+        Do mParts.Parts.Insert(mimePart)
+        Set mimeWriter = ##class(%Net.MIMEWriter).%New()
+        Do mimeWriter.OutputToStream({{httpRequestObject}}.EntityBody)
+        Do mimeWriter.WriteMIMEBody(mParts)
+        Kill mimeWriter, mimePart, mParts, valueStream
     }
 }
 
