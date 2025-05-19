@@ -1,3 +1,20 @@
+Include dc.openapi.common.macro
+
+/// To simplify the process of converting OpenAPI documents to AST structure
+/// This class processes OpenAPI documents according to the following rules:
+/// 
+/// Prerequisites:
+/// - Document must be a valid OpenAPI document
+/// - All $ref references must be defined within the document
+/// - External document references must be defined in the DocumentCollection
+/// 
+/// Simplification Process:
+/// 1. Resolves all external documents that are not full specifications
+/// 2. Flattens documents using the web validator for normalization
+/// 3. Resolves all non-object components in /components/schemas (string, number, integer, boolean, array)
+///    leaving only object definitions in components
+/// 4. Resolves all common parameters in the paths section
+/// 5. Consolidates schema references to improve processing efficiency
 Class dc.openapi.common.SwaggerSpecProcessor Extends %RegisteredObject
 {
 
@@ -14,6 +31,7 @@ Method PreProcess() As %Status
     Set isValid = ..Validate()
 
     If 'isValid {
+        $$$LOGERROR("Validation failed.")
         Set tSc = $$$ERROR($$$GeneralError, "Validation failed, check the Errors property")
         Return tSc
     }
@@ -35,10 +53,14 @@ Method PreProcess() As %Status
         Set documentReference = ..DocumentCollection.Items.GetNext(.key)
         Quit:key=""
         If 'documentReference.IsAFullSpecification Continue
+        $$$LOGINFO("Starting to flatten  document: "_key _" using the web validator tools.")
         Set webValidator = ##class(dc.swaggervalidatorcli.WebSwaggerValidator).%New()
         Set queryParameters("flatten") = "true"
         Set tSc = webValidator.Parse(.queryParameters, .outSpec, documentReference.Document)
-        If $$$ISERR(tSc) Return tSc
+        If $$$ISERR(tSc) {
+            $$$LOGERROR("Failed to flatten document: "_key_" using the web validator tools.")
+            Return tSc
+        }
         Set documentReference.Document = outSpec
         Kill outSpec
     }
@@ -53,6 +75,7 @@ Method PreProcess() As %Status
     Set tSc = flattener.Lift()
 
     If $$$ISERR(tSc) {
+        $$$LOGERROR("Failed to flatten document "_$SYSTEM.Status.GetErrorText(tSc))
         Return tSc
     }
 
@@ -73,16 +96,27 @@ Method Validate() As %Boolean
     For  {
         Set item = ..DocumentCollection.Items.GetNext(.key)
         Quit:key=""
-        ;Continue:key=##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY
-        ;w !,"item   : ", key
+        
+        $$$LOGINFO("Starting validation for document: "_key)
+
+
         Set document = item.Document
         Set references = ##class(dc.openapi.common.ReferenceAnalyzer).GetListOfRefs(document, getInternal, getExternal)
+
+        $$$LOGINFO("Check used $ref are defined, Number of references: "_$ListLength(references))
+
+
         Set ptr = 0
         While $ListNext(references, ptr, ref) {
             Set isDefined = ..ReferenceIsDefined(document, ref)
             If 'isDefined {
-                Write !,"External reference not defined: ", ref, !
+               $$$LOGERROR("Undefined reference in document: "_ref)
+                ;If '..Errors.%IsDefined("UndefinedReferences") Set ..Errors.UndefinedReferences = []
+                ;Do ..Errors.UndefinedReferences.%Push({"document": (key), "reference": (ref)})
                 Set:isValid isValid = $$$NO
+            }
+            Else {
+                $$$LOGINFO("Valid reference found in document: "_ref)
             }
             Do alimUniqueExternal
         }
@@ -96,7 +130,7 @@ Method Validate() As %Boolean
         Quit:key=""
 
         If '..DocumentCollection.ItemExists(key) {
-            Write !,"Missing external document: ", key, !
+            $$$LOGERROR("Missing external document: "_key)
             Do ..Errors.MissingExternalSwagger.%Push(key)
             Set:isValid isValid = $$$NO
         }
@@ -134,6 +168,7 @@ Method ReferenceIsDefined(document As %DynamicObject, ref As %String) As %Boolea
 /// These kind of documents are not "full specifications", (flag SwaggerDocumentReference.IsAFullSpecification).
 Method ResolveExternalDocument(document As %DynamicObject, externalReference As %String) As %Status
 {
+    $$$LOGINFO("Starting to resolve external document partial OpenAPI Document: "_externalReference)
     #dim documentReference As dc.openapi.common.SwaggerDocumentReference
     Set key = ""
     For  {
@@ -158,6 +193,7 @@ ResolveDoc
             Set name = $Piece(line, ##class(dc.openapi.common.ReferenceAnalyzer).#SEPARATOR,* - 1)
             Set parentObject = ##class(dc.openapi.common.ReferenceAnalyzer).GetValue(.currentDocument, parent)
             Do parentObject.%Set(name, {}.%FromJSON(document.%ToJSON()))
+            $$$LOGINFO("Resolved external document: "_externalReference _" into the document "_key_" ("_line_")")
         }
     }
     Kill out
@@ -170,6 +206,9 @@ Method ResolveNonObjectComponents() As %Status
 {
     Set tSc = $$$OK
     Set dataTypes = $ListBuild("string","number","integer","boolean","array")
+
+    $$$LOGINFO("Starting to resolve non object components in all documents ("_$ListToString(dataTypes)_")...")
+
     Set key = ""
     For  {
         Set documentReference = ..DocumentCollection.Items.GetNext(.key)
@@ -192,6 +231,7 @@ Method ResolveNonObjectComponents() As %Status
             Set name = $Piece(line, ##class(dc.openapi.common.ReferenceAnalyzer).#SEPARATOR,* - 1)
             Set parentObject = ##class(dc.openapi.common.ReferenceAnalyzer).GetValue(document, parent)
             Do parentObject.%Set(name, {}.%FromJSON(value.%ToJSON()))
+            $$$LOGINFO("Resolved non object component: "_ref _" into the document "_key_" ("_line_")")
         }
         Kill lines
     }
@@ -207,8 +247,13 @@ Method ResolveAllCommonParameters() As %Status
         Quit:key=""
         If 'documentReference.IsAFullSpecification Continue
         Set document = documentReference.Document
+
+        $$$LOGINFO("Starting to resolve common parameters in document: "_key)
+        
         Set tSc = ..ResolveCommonParameters(document)
+        
         If $$$ISERR(tSc) {
+            $$$LOGERROR("Failed to resolve common parameters in document: "_key)
             Return tSc
         }
     }
@@ -233,9 +278,11 @@ Method ResolveCommonParameters(document As %DynamicObject) As %Status
             Set commonParametersIterator = pathItem.parameters.%GetIterator()
             While commonParametersIterator.%GetNext(.pIdx, .commonParameter, .type) { ; iterate over the common parameters
                 If ..CommonParameterIsDefinedInOperation(operation, pathItem.parameters) {
+                    $$$LOGINFO("Skipping common parameter "_commonParameter.name_" in operation "_verb_" for path "_path _" because it is already defined in the operation.")
                     Continue
                 }
                 Do operation.parameters.%Push({}.%FromJSON(commonParameter.%ToJSON()))
+                $$$LOGINFO("Resolved common parameter "_commonParameter.name_" in operation "_verb_" for path "_path)
             }
         }
         Do pathItem.remove("parameters") ; remove the common parameters from the pathItem after resolving

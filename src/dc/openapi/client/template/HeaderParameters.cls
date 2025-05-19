@@ -1,10 +1,10 @@
-Class dc.openapi.common.template.HeaderParameters Extends dc.openapi.common.template.Code
+Class dc.openapi.client.template.HeaderParameters Extends dc.openapi.client.template.Parameters
 {
 
 XData DatatypeSimple [ MimeType = plain/text ]
 {
     /// ex: X-MyHeader: 5
-    Do {{httpRequestObject}}.SetHeader("{{Name}}", ..{{ModelProperty.Name}})
+    Do {{HttpRequestObject}}.SetHeader("{{Name}}", ..{{ModelProperty.Name}})
 }
 
 XData ArraySimple [ MimeType = plain/text ]
@@ -12,7 +12,7 @@ XData ArraySimple [ MimeType = plain/text ]
     // X-MyHeader: 3,4,5
     Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
     Set tmpList = $List(tmpList)
-    Do {{httpRequestObject}}.SetHeader("{{Name}}", $ListToString(tmpList))
+    Do {{HttpRequestObject}}.SetHeader("{{Name}}", $ListToString(tmpList))
     Kill tmpList
 }
 
@@ -27,7 +27,7 @@ XData ObjectSimple [ MimeType = plain/text ]
     While iterator.%GetNext(.key, .value) {
         Set parameterValue = parameterValue _ $s(parameterValue="":"",1:",") _ key_","_value
     }
-    Do {{httpRequestObject}}.SetHeader("{{Name}}", parameterValue)
+    Do {{HttpRequestObject}}.SetHeader("{{Name}}", parameterValue)
     Kill tmpString, tmpJSONObject, parameterValue, key, value
 }
 
@@ -42,13 +42,16 @@ XData ObjectSimpleExplode [ MimeType = plain/text ]
     While iterator.%GetNext(.key, .value) {
         Set parameterValue = parameterValue _ $s(parameterValue="":"",1:",") _ key_"="_value
     }
-    Do {{httpRequestObject}}.SetHeader("{{Name}}", parameterValue)
+    Do {{HttpRequestObject}}.SetHeader("{{Name}}", parameterValue)
     Kill tmpString, tmpJSONObject, parameterValue, key, value
 }
 
-ClassMethod Decision(type As %String, style As %String, explode As %Boolean) As %String
+ClassMethod Decision(parameter As dc.openapi.common.ast.Parameter) As %String
 {
-    Set type = $$$LOWER(type), style = $$$LOWER(style), explode = $SELECT(explode="":"explode=true",explode=1:"explode=true",1:"explode=false")
+    Set style = $s(parameter.Style="":"simple", 1:parameter.Style)  ; default is simple
+    Set explode = parameter.Explode = 1
+    Set type= $s(parameter.ModelProperty.Collection'="":"array",1:$$$LOWER(parameter.ModelProperty.TypeHelper))
+    Set style = $$$LOWER(style), explode = $SELECT(explode="":"explode=true",explode=1:"explode=true",1:"explode=false")
     Set:style="" style = "form"
 
     ; primitive 

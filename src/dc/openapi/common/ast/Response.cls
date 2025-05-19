@@ -12,4 +12,6 @@ Property Example As %String(MAXLEN = 32000);
 
 Property ModelProperty As dc.openapi.common.ast.ModelProperty;
 
+Property Headers As list Of dc.openapi.common.ast.ModelProperty;
+
 }

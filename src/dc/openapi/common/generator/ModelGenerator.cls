@@ -1,11 +1,9 @@
-Class dc.openapi.common.ModelGenerator Extends %RegisteredObject
+Class dc.openapi.common.generator.ModelGenerator Extends dc.openapi.common.GeneratorAbstract
 {
 
-Property AST As dc.openapi.common.ast.OAS;
+Parameter SUBPKG = "model";
 
-Property AddSuperClass As %String;
-
-Method Generate() As %Status
+Method GenerateAll() As %Status
 {
     Set tSc = $$$OK
     // Iterate over the models in the AST and generate code for each one
@@ -18,19 +16,22 @@ Method Generate() As %Status
     For  {
         Set model = models.GetNext(.key)
         Quit:key=""
-        Set tSc = $$$ADDSC(tSc,..GenerateModel(model))
+        Set ..ClassName = model.Name
+        Set ..Super = model.Super _ $Select(..Super'="" : "," _ ..Super, 1: "")
+        Set classDef = ..Generate(model)
+        Set tSc = $$$ADDSC(tSc,classDef.%Save())
     }
 
     Return tSc
 }
 
-Method GenerateModel(model As dc.openapi.common.ast.Model) As %Status
+Method Generate(model As dc.openapi.common.ast.Model) As %Dictionary.ClassDefinition
 {
     #define classDef As %Dictionary.ClassDefinition
 
     Set classDef = ##class(%Dictionary.ClassDefinition).%New()
-    Set classDef.Name = model.Name
-    Set classDef.Super = model.Super _ $Select(..AddSuperClass'="" : "," _ ..AddSuperClass, 1: "")
+    Set classDef.Name = ..ClassName
+    Set classDef.Super = ..Super
     Set classDef.Description = ##class(dc.openapi.common.Utils).FormatDescription(model.Description)
     Set classDef.Inheritance = "left"
     Set classDef.ProcedureBlock = $$$YES
@@ -54,7 +55,7 @@ Method GenerateModel(model As dc.openapi.common.ast.Model) As %Status
         Do classDef.Properties.Insert(propDef)
     }
 
-    Return classDef.%Save()
+    Return classDef
 }
 
 ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelProperty) As %Dictionary.PropertyDefinition

@@ -3,9 +3,13 @@ Class dc.openapi.common.ast.Test Extends %RegisteredObject
 
 ClassMethod Test() As %Status
 {
+    Do ##class(dc.openapi.common.TinyLogger).StartSession({"verbose":1})
     Try{
         tro 
         ts
+
+       
+
         Set oasFile = ##class(%Stream.FileCharacter).%New()
         ;Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.json")
         Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.yaml")
@@ -57,15 +61,7 @@ ClassMethod Test() As %Status
             $$$ThrowStatus(tSc)
         }
 
-        Set modelGenerator = ##class(dc.openapi.common.ModelGenerator).%New()
-        Set modelGenerator.AST = transformer.AST
-        
-        Set tsc = modelGenerator.Generate()
-        If $$$ISERR(tsc) {
-            $$$ThrowStatus(tsc)
-        }
-
-        Set httpClientGenerator = ##class(dc.openapi.client.HttpRequestGenerator).%New()
+        Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New()
         Set httpClientGenerator.AST = transformer.AST
         Set httpClientGenerator.Package = "myapplication.httpclient"
         Set tsc = httpClientGenerator.Generate()
@@ -77,6 +73,9 @@ ClassMethod Test() As %Status
         Set tSc = ex.AsStatus()
         Do $SYSTEM.Status.DisplayError(tSc)
     }
+
+    ;Do ##class(dc.openapi.common.TinyLogger).ShowLogs()
+    Do ##class(dc.openapi.common.TinyLogger).StopSession()
     Return tSc
 }
 

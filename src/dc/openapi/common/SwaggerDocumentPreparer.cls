@@ -1,3 +1,5 @@
+Include dc.openapi.common.macro
+
 Class dc.openapi.common.SwaggerDocumentPreparer Extends %RegisteredObject
 {
 
@@ -8,6 +10,8 @@ Parameter SWAGGERV2TYPE = "Swagger 2.0";
 Parameter OPENAPIV3TYPE = "OpenAPI 3.x";
 
 Parameter REFERENCETYPE = "Reference";
+
+Property Logs As list Of %String(MAXLEN = 1024);
 
 Method SetMainDocument(documentStream As %Stream.GlobalCharacter, settings As %DynamicObject = {{}}) As %Status
 {
@@ -36,6 +40,7 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
         
         If '..IsJSONDocument(documentStream, .document) {
             ; it's yaml document, convert it to JSON
+            $$$LOGWARNING($$$FormatText("The document %1 is not a JSON document.", key))
             
             Set docString = ""
             Do documentStream.Rewind()
@@ -43,8 +48,13 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
                 Set docString = docString _ documentStream.Read()
             }
             Do documentStream.Rewind()
+            
+            $$$LOGINFO($$$FormatText("Converting the document %1 to JSON.", key))
+            
             Set jsonString = ..YamlToJSON(docString)
             Set document = {}.%FromJSON(jsonString)
+            
+            $$$LOGINFO($$$FormatText("Conversion done for the document %1.", key))
         }
 
         Set documentType = ..GetDocumentType(document)
@@ -54,21 +64,34 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
             ; convert to OpenAPI 3.x
             Set isFullSpecification = $$$YES
 
+            $$$LOGWARNING($$$FormatText("The document %1 is in Swagger 2.0 format.", key))
+            $$$LOGINFO($$$FormatText("Converting the document %1 to OpenAPI 3.x.", key))
+
             Set webConverter = ##class(dc.swaggerconverter.WebConverter).%New()
             Set webConverter.specification = document
             $$$TOE(sc, webConverter.Convert(.OpenAPIV3))
+
+            $$$LOGINFO($$$FormatText("Conversion to OpenAPI 3.x. done for the document %1.", key))
+            
             Set OpenAPI = OpenAPIV3
 
         }
         ElseIf documentType = ..#OPENAPIV3TYPE {
             ; it's already OpenAPI 3.x
             Set isFullSpecification = $$$YES
+            $$$LOGINFO($$$FormatText("The document %1 is in OpenAPI 3.x format.", key))
+        }
+        Else {
+            $$$LOGWARNING($$$FormatText("The document %1 is a reference type (a part of OpenAPI Document).", key))
         }
 
         Do ..DocumentCollection.AddItem(document, key, isFullSpecification, settings)
+
+        $$$LOGINFO($$$FormatText("The document %1 has been added to the collection.", key))
     }
     Catch ex {
         Set tSc = ex.AsStatus()
+       $$$LOGERROR($$$FormatText("Error while adding the document %1: %2", key, $SYSTEM.Status.GetErrorText(tSc)))
     }
 
     Return tSc

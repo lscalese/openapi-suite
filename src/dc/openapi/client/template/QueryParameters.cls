@@ -1,10 +1,10 @@
-Class dc.openapi.common.template.QueryParameters Extends dc.openapi.common.template.Code
+Class dc.openapi.client.template.QueryParameters Extends dc.openapi.client.template.Parameters
 {
 
 XData DatatypeForm [ MimeType = plain/text ]
 {
     // Serialize the parameter {{{Name}}}, ex path = /path?{{Name}}=1234
-    Do {{httpRequestObject}}.SetParam("{{Name}}", ..{{ModelProperty.Name}})
+    Do {{HttpRequestObject}}.SetParam("{{Name}}", ..{{ModelProperty.Name}})
 }
 
 XData ArrayFormExplode [ MimeType = plain/text ]
@@ -13,7 +13,7 @@ XData ArrayFormExplode [ MimeType = plain/text ]
     Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
     Set tmpList = $List(tmpList), ptr = 0, index = 0
     While $ListNext(tmpList, ptr, itemValue) {
-        Do {{httpRequestObject}}.SetParam("{{Name}}", itemValue, $Increment(index))
+        Do {{HttpRequestObject}}.SetParam("{{Name}}", itemValue, $Increment(index))
     }
     Kill tmpList, ptr, index, itemValue
 }
@@ -26,7 +26,7 @@ XData ArrayForm [ MimeType = plain/text ]
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:",") _ itemValue
     }
-    Do {{httpRequestObject}}.SetParam("{{Name}}", valueParameter)
+    Do {{HttpRequestObject}}.SetParam("{{Name}}", valueParameter)
     Kill tmpList, ptr, itemValue, valueParameter
 }
 
@@ -38,7 +38,7 @@ XData ArraySpaceDelimited [ MimeType = plain/text ]
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:" ") _ itemValue
     }
-    Do {{httpRequestObject}}.SetParam("{{Name}}", valueParameter)
+    Do {{HttpRequestObject}}.SetParam("{{Name}}", valueParameter)
     Kill tmpList, ptr, itemValue, valueParameter
 }
 
@@ -50,7 +50,7 @@ XData ArrayPipeDelimited [ MimeType = plain/text ]
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:"|") _ itemValue
     }
-    Do {{httpRequestObject}}.SetParam("{{Name}}", valueParameter)
+    Do {{HttpRequestObject}}.SetParam("{{Name}}", valueParameter)
     Kill tmpList, ptr, itemValue, valueParameter
 }
 
@@ -63,7 +63,7 @@ XData ObjectFormExplode [ MimeType = plain/text ]
     Set tmpJSONObject = {}.%FromJSON(tmpString)
     Set iterator = tmpJSONObject.%GetIterator()
     While iterator.%GetNext(.key, .value) {
-        Do {{httpRequestObject}}.SetParam(key, value)
+        Do {{HttpRequestObject}}.SetParam(key, value)
     }
     Kill tmpString, tmpJSONObject, iterator, key, value
 }
@@ -79,7 +79,7 @@ XData ObjectForm [ MimeType = plain/text ]
     While iterator.%GetNext(.key, .value) {
         Set parameterValue = parameterValue _ $s(parameterValue="":"",1:",") _ key_","_value
     }
-    Do {{httpRequestObject}}.SetParam("{{Name}}", parameterValue)
+    Do {{HttpRequestObject}}.SetParam("{{Name}}", parameterValue)
     Kill tmpString, tmpJSONObject, iterator, key, value, parameterValue
 }
 
@@ -92,14 +92,17 @@ XData ObjectDeepObjectExplode [ MimeType = plain/text ]
     Set tmpJSONObject = {}.%FromJSON(tmpString)
     Set iterator = tmpJSONObject.%GetIterator()
     While iterator.%GetNext(.key, .value) {
-        Do {{httpRequestObject}}.SetParam("{{Name}}["_key_"], value)
+        Do {{HttpRequestObject}}.SetParam("{{Name}}["_key_"], value)
     }
     Kill tmpString, tmpJSONObject, iterator, key, value
 }
 
-ClassMethod Decision(type As %String, style As %String, explode As %Boolean) As %String
+ClassMethod Decision(parameter As dc.openapi.common.ast.Parameter) As %String
 {
-    Set type = $$$LOWER(type), style = $$$LOWER(style), explode = $SELECT(explode="":"explode=true",explode=1:"explode=true",1:"explode=false")
+    Set style = $s(parameter.Style="":"form", 1:parameter.Style)    ; default is form
+    Set explode = $s(parameter.Explode="": 1, 1:parameter.Explode)  ; default is true
+    Set type= $s(parameter.ModelProperty.Collection'="":"array",1:$$$LOWER(parameter.ModelProperty.TypeHelper))
+    Set style = $$$LOWER(style), explode = $SELECT(explode="":"explode=true",explode=1:"explode=true",1:"explode=false")
     Set:style="" style = "form"
 
     ; primitive 
@@ -118,7 +121,6 @@ ClassMethod Decision(type As %String, style As %String, explode As %Boolean) As 
     Set decision("object", "form", "explode=true") = "ObjectFormExplode"
     Set decision("object", "form", "explode=false") = "ObjectForm"
     Set decision("object", "deepObject", "explode=true") = "ObjectDeepObjectExplode"
-
 
     Return $GET(decision(type, style, explode))
 }

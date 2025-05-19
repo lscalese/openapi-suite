@@ -394,7 +394,7 @@ requestBody
 
         Set modelProperty = ..GetModelProperty(mimeItem, "schema")
         
-        Set modelProperty.Name = $Piece(modelProperty.Type, ".", *)
+        Set modelProperty.Name = ##class(dc.openapi.common.NamingConvention).NormalizePropertyName($Piece(modelProperty.Type, ".", *))
         Set requestBody.ModelProperty = modelProperty
 
         Do path.RequestBodies.Insert(requestBody)
@@ -421,6 +421,20 @@ responses
             }
         }
 
+        /*Set headers = ##class(%Collection.ListOfObj).%New()
+        If $IsObject(responseItem.headers) {
+            Set headerIterator = responseItem.headers.%GetIterator()
+            While headerIterator.%GetNext(.headerKey, .headerItem, .headerType) {
+                If '$IsObject(headerItem) {
+                    Continue
+                }
+                Set modelProperty = ..GetModelProperty(headerItem, "schema")
+                Set modelProperty.Name = ##class(dc.openapi.common.NamingConvention).NormalizePropertyName(headerKey)
+                Set modelProperty.pJSONFieldName = headerKey
+                Do headers.Insert(modelProperty)
+            }
+        }*/
+
         If $IsObject(responseItem.content) {
             Set mimeTypeIterator = responseItem.content.%GetIterator()
             While mimeTypeIterator.%GetNext(.mimeType, .mimeItem) {
@@ -433,7 +447,7 @@ responses
                 Set response.ContentType = mimeType
                 Set response.Example = $Select($IsObject(mimeItem.example):mimeItem.example.%ToJSON(), 1: mimeItem.examples)
                 Set modelProperty = ..GetModelProperty(mimeItem, "schema")
-                Set modelProperty.Name = "Content"
+                Set modelProperty.Name = ##class(dc.openapi.common.NamingConvention).NormalizePropertyName($Piece(modelProperty.Type, ".", *))
                 Set response.ModelProperty = modelProperty
                 Do path.Responses.Insert(response)
             }

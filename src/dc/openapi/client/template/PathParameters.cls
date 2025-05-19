@@ -1,4 +1,4 @@
-Class dc.openapi.common.template.PathParameters Extends dc.openapi.common.template.Code
+Class dc.openapi.client.template.PathParameters Extends dc.openapi.client.template.Parameters
 {
 
 /// --- simple
@@ -128,9 +128,12 @@ XData ObjectMatrixExplode [ MimeType = plain/text ]
     Kill tmp
 }
 
-ClassMethod Decision(type As %String, style As %String, explode As %Boolean) As %String
+ClassMethod Decision(parameter As dc.openapi.common.ast.Parameter) As %String
 {
-    Set type = $$$LOWER(type), style = $$$LOWER(style), explode = $Select(explode:"explode=true",1:"explode=false")
+    Set style = $s(parameter.Style="":"simple",1:parameter.Style)   ; default is simple
+    Set explode = parameter.Explode = 1                             ; default is false
+    Set type = $s(parameter.ModelProperty.Collection'="":"array",1:$$$LOWER(parameter.ModelProperty.TypeHelper))
+    Set style = $$$LOWER(style), explode = $Select(explode:"explode=true",1:"explode=false")
 
     Set decision("datatype", "simple", "explode=false") = "DatatypeSimple"
     Set decision("datatype", "simple", "explode=true") = "DatatypeSimple"
@@ -152,7 +155,7 @@ ClassMethod Decision(type As %String, style As %String, explode As %Boolean) As 
     Set decision("array", "matrix", "explode=true") = "ArrayMatrixExplode"
     Set decision("object", "matrix", "explode=false") = "ObjectMatrix"
     Set decision("object", "matrix", "explode=true") = "ObjectMatrixExplode"
-
+    
     Return $Get(decision(type, style, explode))
 }
 
