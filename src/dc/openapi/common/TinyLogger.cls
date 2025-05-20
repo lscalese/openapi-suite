@@ -9,7 +9,7 @@ Property Verbose As %Boolean [ InitialExpression = 0 ];
 
 Property SessionStarted As %Boolean [ InitialExpression = 0 ];
 
-Property Level As %Integer [ InitialExpression = {$$$LEVELINFO} ];
+Property Level As %Integer [ InitialExpression = {$$$LEVELDEBUG} ];
 
 ClassMethod GetInstance() As dc.openapi.common.TinyLogger
 {

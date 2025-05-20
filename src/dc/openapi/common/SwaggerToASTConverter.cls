@@ -1,3 +1,5 @@
+Include dc.openapi.common.macro
+
 /// This class transforms the OpenAPI Specification (OAS) to AST
 Class dc.openapi.common.SwaggerToASTConverter Extends %RegisteredObject
 {
@@ -16,6 +18,8 @@ Method Transform() As %Status
 {
     Set sc = $$$OK
 
+    $$$LOGINFO("Starting SwaggerToASTConverter...")
+
     Set ..OAS = ..DocumentCollection.GetMainDocument()
     Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
     Do ..Info()
@@ -24,12 +28,28 @@ Method Transform() As %Status
     Do ..Models()
 
     If ..UseAI {
+        ;todo
         ;Do ..AIImprovement()
         ;Do ..GenerateOperationIdByAI()
     }
 
     If $Get(%zdump) { ; debug
         zw ##class(dc.openapi.common.Utils).DumpToFile(..AST, "/home/irisowner/irisdev/debug/ast.json", $$$YES)
+    }
+
+    If $$$LOGTRACEENABLED {
+        Do ..AST.%JSONExportToString(.astJSON)
+        Do ##class(%JSON.Formatter).%New().FormatToString(.astJSON, .formattedJSON)
+        Kill astJSON
+        $$$LOGTRACE("SwaggerToASTConverter result:" _ $$$NL _formattedJSON)
+        Kill formattedJSON
+    }
+
+    If $$$ISERR(sc) {
+        $$$LOGERROR("Error in SwaggerToASTConverter: "_$SYSTEM.Status.GetErrorText(sc))
+    }
+    Else {
+        $$$LOGINFO("SwaggerToASTConverter completed successfully.")
     }
 
     Return sc

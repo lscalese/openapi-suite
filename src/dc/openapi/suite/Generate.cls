@@ -3,11 +3,7 @@ Class dc.openapi.suite.Generate
 
 /// Generate HTTP Client (without interoperability production)<br/>
 /// 
-ClassMethod Client(
-	PackageName As %String,
-	Specfication,
-	ByRef Features,
-	ExternalRefMap As %DynamicObject = "") As %Status
+ClassMethod Client(PackageName As %String, Specfication, ByRef Features, ExternalRefMap As %DynamicObject = "") As %Status
 {
     Set %zverbose = 1
     Set Features("simpleHttpClientOnly") = 1
@@ -22,11 +18,7 @@ ClassMethod Client(
     Quit ##class(dc.openapi.client.Spec).generateApp(PackageName, Specfication, .Features, ExternalRefMap)
 }
 
-ClassMethod ProductionClient(
-	PackageName As %String,
-	Specfication,
-	ByRef Features,
-	ExternalRefMap As %DynamicObject = "") As %Status
+ClassMethod ProductionClient(PackageName As %String, Specfication, ByRef Features, ExternalRefMap As %DynamicObject = "") As %Status
 {
     Set %zverbose = 1
     Set Features("simpleHttpClientOnly") = 0
@@ -41,11 +33,7 @@ ClassMethod ProductionClient(
     Quit ##class(dc.openapi.client.Spec).generateApp(PackageName, Specfication, .Features, ExternalRefMap)
 }
 
-ClassMethod Server(
-	PackageName As %String,
-	Specfication,
-	ByRef Features,
-	ExternalRefMap As %DynamicObject = "") As %Status
+ClassMethod Server(PackageName As %String, Specfication, ByRef Features, ExternalRefMap As %DynamicObject = "") As %Status
 {
     Set %zverbose = 1
 
@@ -59,11 +47,7 @@ ClassMethod Server(
     Quit ##class(dc.openapi.server.ServerAppGenerator).Generate(PackageName, Specfication, , .Features, ExternalRefMap)
 }
 
-ClassMethod Models(
-	PackageName As %String,
-	Specfication,
-	ByRef Features,
-	ExternalRefMap As %DynamicObject = "") As %Status
+ClassMethod Models(PackageName As %String, Specfication, ByRef Features, ExternalRefMap As %DynamicObject = "") As %Status
 {
     Set %zverbose = 1
     

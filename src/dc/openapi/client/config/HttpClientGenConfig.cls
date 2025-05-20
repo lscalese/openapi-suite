@@ -1,0 +1,58 @@
+Class dc.openapi.client.config.HttpClientGenConfig Extends (%JSON.Adaptor, %RegisteredObject)
+{
+
+Property AST As dc.openapi.common.ast.OAS;
+
+/// Package de base pour générer les classes
+Property Package As %String;
+
+Property GenerateModels As %Boolean [ InitialExpression = 1 ];
+
+Property GenerateClientClass As %Boolean [ InitialExpression = 1 ];
+
+Property GenerateAbstractResponseClass As %Boolean [ InitialExpression = 1 ];
+
+Property GenerateRequestClasses As %Boolean [ InitialExpression = 1 ];
+
+Property GenerateResponseClasses As %Boolean [ InitialExpression = 1 ];
+
+/// The key is the operationId
+Property GenerateOperationRequestClasses As array Of %Boolean;
+
+Property GenerateOperationRequestClassNames As array Of %String;
+
+/// The key is the operationId
+Property GenerateOperationResponseClasses As array Of %Boolean;
+
+Property GenerateOperationResponseClassNames As array Of %String;
+
+Property HttpClientClassName As %String;
+
+Property AbstractResponseClassName As %String;
+
+Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
+{
+    Set ..AST = AST
+    Set ..Package = pPackage
+    
+    Set ..HttpClientClassName = ##class(dc.openapi.client.generator.ClientClassGenerator).GetClassName(..Package)
+    Set ..AbstractResponseClassName = ##class(dc.openapi.client.generator.AbstractResponseClassGenerator).GetClassName(..Package)
+
+    If $IsObject(AST), $IsObject(AST.Paths) {
+        Set key = ""
+        For  {
+            Set path = AST.Paths.GetNext(.key)
+            Quit:key=""
+            Do ..GenerateOperationRequestClasses.SetAt($$$YES, path.OperationId)
+            Do ..GenerateOperationResponseClasses.SetAt($$$YES, path.OperationId)
+            Set requestClassName = ##class(dc.openapi.client.generator.RequestModelGenerator).GetClassName(..Package, path)
+            Set responseClassName = ##class(dc.openapi.client.generator.ResponseModelGenerator).GetClassName(..Package, path)
+            Do ..GenerateOperationRequestClassNames.SetAt(requestClassName, path.OperationId)
+            Do ..GenerateOperationResponseClassNames.SetAt(responseClassName, path.OperationId)
+        }
+    }
+
+    Return $$$OK
+}
+
+}

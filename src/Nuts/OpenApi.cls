@@ -93,10 +93,7 @@ ClassMethod Monitoring() As %Status
 }
 
 /// Generate API helper
-ClassMethod Generate(
-	packageName As %String,
-	url As %String,
-	modelOnly As %Boolean = 0) As %Status
+ClassMethod Generate(packageName As %String, url As %String, modelOnly As %Boolean = 0) As %Status
 {
     set %zverbose = 1
     // We want a Production and Operation; no Business Services, Business Processes or Utils
@@ -131,10 +128,7 @@ ClassMethod Generate(
     return sc
 }
 
-ClassMethod GenerateServer(
-	packageName As %String,
-	url As %String,
-	modelOnly As %Boolean = 0) As %Status
+ClassMethod GenerateServer(packageName As %String, url As %String, modelOnly As %Boolean = 0) As %Status
 {
     set %zverbose = 1
     // We want a Production and Operation; no Business Services, Business Processes or Utils

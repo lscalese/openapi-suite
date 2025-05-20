@@ -5,12 +5,7 @@ Class dc.openapi.server.ServerAppGenerator
 
 Parameter XDataName = "OpenAPI";
 
-ClassMethod Generate(
-	application As %String,
-	specification,
-	webApplicationname As %String = "",
-	ByRef features As %Binary,
-	externals As %DynamicObject = "") As %Status
+ClassMethod Generate(application As %String, specification, webApplicationname As %String = "", ByRef features As %Binary, externals As %DynamicObject = "") As %Status
 {
     $$$zlog("Generate server-side application " _ application)
 
@@ -29,12 +24,7 @@ ClassMethod Generate(
     Return sc
 }
 
-ClassMethod %CreateServerApplication(
-	applicationName As %String,
-	swagger As %DynamicObject,
-	ByRef features As %Binary,
-	Output newApplication As %Boolean,
-	externals As %DynamicObject = "") As %Status
+ClassMethod %CreateServerApplication(applicationName As %String, swagger As %DynamicObject, ByRef features As %Binary, Output newApplication As %Boolean, externals As %DynamicObject = "") As %Status
 {
     Set sc = $$$OK
    
@@ -96,9 +86,7 @@ ClassMethod %CreateServerApplication(
     Return sc
 }
 
-ClassMethod CreateWebApplication(
-	webAppName As %String,
-	dispatchClassName As %String) As %Status
+ClassMethod CreateWebApplication(webAppName As %String, dispatchClassName As %String) As %Status
 {
     Set ns = $NameSpace, sc = $$$OK
     New $NameSpace

@@ -93,6 +93,8 @@ Method PreProcess() As %Status
                 $$$LOGTRACE($$$FormatText("Document %1 after preprocessing: "_$$$NL_"%2", key, docString))
             }
         }
+
+        $$$LOGINFO("Preprocessing completed successfully.")
     } 
     Catch ex {
         Set tSc = ex.AsStatus()

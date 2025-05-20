@@ -8,8 +8,6 @@ ClassMethod Test() As %Status
         tro 
         ts
 
-       
-
         Set oasFile = ##class(%Stream.FileCharacter).%New()
         ;Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.json")
         Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.yaml")
@@ -61,9 +59,8 @@ ClassMethod Test() As %Status
             $$$ThrowStatus(tSc)
         }
 
-        Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New()
-        Set httpClientGenerator.AST = transformer.AST
-        Set httpClientGenerator.Package = "myapplication.httpclient"
+        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", transformer.AST)
+        Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New(httpClientGenConfig)
         Set tsc = httpClientGenerator.Generate()
         If $$$ISERR(tsc) {
             $$$ThrowStatus(tsc)
