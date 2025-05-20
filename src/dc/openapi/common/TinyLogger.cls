@@ -1,3 +1,5 @@
+Include dc.openapi.common.macro
+
 Class dc.openapi.common.TinyLogger Extends %RegisteredObject
 {
 
@@ -6,6 +8,8 @@ Property Logs As list Of %String(MAXLEN = 1024);
 Property Verbose As %Boolean [ InitialExpression = 0 ];
 
 Property SessionStarted As %Boolean [ InitialExpression = 0 ];
+
+Property Level As %Integer [ InitialExpression = {$$$LEVELTRACE} ];
 
 ClassMethod GetInstance() As dc.openapi.common.TinyLogger
 {
@@ -28,32 +32,31 @@ ClassMethod StopSession()
     Set session.SessionStarted = $$$NO
 }
 
-ClassMethod AddLog(log As %String, level As %String = "INFO")
+ClassMethod AddLog(log As %String, level As %Integer = 3)
 {
     Set session = ..GetInstance()
     If 'session.SessionStarted {
         Return $$$OK
     }
 
-    Set level = $$$UPPER(level)
+    If level > session.Level {
+        Return $$$OK
+    }
 
-    if level = "ERROR" {
+    if level = $$$LEVELERROR {
         Do session.Error(log)
     }
-    ElseIf level = "WARNING" {
+    ElseIf level = $$$LEVELWARNING {
         Do session.Warning(log)
     }
-    ElseIf level = "INFO" {
+    ElseIf level = $$$LEVELINFO {
         Do session.Info(log)
     }
-    ElseIf level = "DEBUG" {
+    ElseIf level = $$$LEVELDEBUG {
         Do session.Debug(log)
     }
-    ElseIf level = "TRACE" {
+    ElseIf level = $$$LEVELTRACE {
         Do session.Trace(log)
-    }
-    ElseIf level = "LOG" {
-        Do session.Log(log)
     }
     Else {
         Do session.Add($zdt($h,3,1)_" "_log)
