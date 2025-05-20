@@ -53,6 +53,12 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
             
             Set jsonString = ..YamlToJSON(docString)
             Set document = {}.%FromJSON(jsonString)
+
+            If $$$LOGTRACEENABLED {
+                Set jsonString = ""
+                Do ##class(%JSON.Formatter).%New().FormatToString(document, .jsonString)
+                $$$LOGTRACE($$$FormatText("Converted document %1 to JSON: %2", key, jsonString))
+            }
             
             $$$LOGINFO($$$FormatText("Conversion done for the document %1.", key))
         }
@@ -65,6 +71,7 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
             Set isFullSpecification = $$$YES
 
             $$$LOGWARNING($$$FormatText("The document %1 is in Swagger 2.0 format.", key))
+            $$$LOGWARNING($$$FormatText("OpenAPI-Suite can only convert a complete Swagger 2.0 document to OpenAPI 3.x. If you are using an external partial document (reference), errors may occur during further processing."))
             $$$LOGINFO($$$FormatText("Converting the document %1 to OpenAPI 3.x.", key))
 
             Set webConverter = ##class(dc.swaggerconverter.WebConverter).%New()
@@ -72,6 +79,12 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
             $$$TOE(sc, webConverter.Convert(.OpenAPIV3))
 
             $$$LOGINFO($$$FormatText("Conversion to OpenAPI 3.x. done for the document %1.", key))
+
+            If $$$LOGTRACEENABLED {
+                Set jsonString = ""
+                Do ##class(%JSON.Formatter).%New().FormatToString(OpenAPIV3, .jsonString)
+                $$$LOGTRACE($$$FormatText("Converted document %1 from version 2 to version 3: %2", key, jsonString))
+            }
             
             Set OpenAPI = OpenAPIV3
 
@@ -91,7 +104,7 @@ Method AddDocument(documentStream As %Stream.GlobalCharacter, key As %String, se
     }
     Catch ex {
         Set tSc = ex.AsStatus()
-       $$$LOGERROR($$$FormatText("Error while adding the document %1: %2", key, $SYSTEM.Status.GetErrorText(tSc)))
+        $$$LOGERROR($$$FormatText("Error while adding the document %1: %2", key, $SYSTEM.Status.GetErrorText(tSc)))
     }
 
     Return tSc

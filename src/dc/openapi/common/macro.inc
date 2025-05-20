@@ -22,3 +22,8 @@ ROUTINE dc.openapi.common.macro [Type=INC]
 #Def1Arg LOGINFO(%arg)                      Do ##class(dc.openapi.common.TinyLogger).AddLog(%arg,$$$LEVELINFO)
 #Def1Arg LOGDEBUG(%arg)                     Do ##class(dc.openapi.common.TinyLogger).AddLog(%arg,$$$LEVELDEBUG)
 #Def1Arg LOGTRACE(%arg)                     Do ##class(dc.openapi.common.TinyLogger).AddLog(%arg,$$$LEVELTRACE)
+
+#Def1Arg LOGTAG(%level)                     $Case(%level, $$$LEVELFATAL: "[FATAL]", $$$LEVELERROR: "[ERROR]", $$$LEVELWARNING: "[WARNING]", $$$LEVELINFO: "[INFO]", $$$LEVELDEBUG: "[DEBUG]", $$$LEVELTRACE: "[TRACE]",:"")
+
+#define LOGTRACEENABLED                     (##class(dc.openapi.common.TinyLogger).GetInstance().Level>=$$$LEVELTRACE)
+#define LOGDEBUGENABLED                     (##class(dc.openapi.common.TinyLogger).GetInstance().Level>=$$$LEVELDEBUG)

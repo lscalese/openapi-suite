@@ -40,7 +40,7 @@ ClassMethod Test() As %Status
         
         ;Do preparer.SetMainDocument(dataTypesStream)
         ;Do preparer.SetMainDocument({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flatten.json"),{"modelPackage":"myapp"})
-        ; Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
+        ;Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
         
         Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapp"})
         Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml", {"modelPackage":"ssi"})

@@ -17,7 +17,6 @@ Method Transform() As %Status
     Set sc = $$$OK
 
     Set ..OAS = ..DocumentCollection.GetMainDocument()
-    ;Set ..AST.OpenAPI = ..OAS.openapi
     Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
     Do ..Info()
     Do ..Servers()
@@ -420,20 +419,6 @@ responses
                 ; not found
             }
         }
-
-        /*Set headers = ##class(%Collection.ListOfObj).%New()
-        If $IsObject(responseItem.headers) {
-            Set headerIterator = responseItem.headers.%GetIterator()
-            While headerIterator.%GetNext(.headerKey, .headerItem, .headerType) {
-                If '$IsObject(headerItem) {
-                    Continue
-                }
-                Set modelProperty = ..GetModelProperty(headerItem, "schema")
-                Set modelProperty.Name = ##class(dc.openapi.common.NamingConvention).NormalizePropertyName(headerKey)
-                Set modelProperty.pJSONFieldName = headerKey
-                Do headers.Insert(modelProperty)
-            }
-        }*/
 
         If $IsObject(responseItem.content) {
             Set mimeTypeIterator = responseItem.content.%GetIterator()

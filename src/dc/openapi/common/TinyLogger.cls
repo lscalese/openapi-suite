@@ -9,7 +9,7 @@ Property Verbose As %Boolean [ InitialExpression = 0 ];
 
 Property SessionStarted As %Boolean [ InitialExpression = 0 ];
 
-Property Level As %Integer [ InitialExpression = {$$$LEVELTRACE} ];
+Property Level As %Integer [ InitialExpression = {$$$LEVELINFO} ];
 
 ClassMethod GetInstance() As dc.openapi.common.TinyLogger
 {
@@ -42,26 +42,10 @@ ClassMethod AddLog(log As %String, level As %Integer = 3)
     If level > session.Level {
         Return $$$OK
     }
-
-    if level = $$$LEVELERROR {
-        Do session.Error(log)
-    }
-    ElseIf level = $$$LEVELWARNING {
-        Do session.Warning(log)
-    }
-    ElseIf level = $$$LEVELINFO {
-        Do session.Info(log)
-    }
-    ElseIf level = $$$LEVELDEBUG {
-        Do session.Debug(log)
-    }
-    ElseIf level = $$$LEVELTRACE {
-        Do session.Trace(log)
-    }
-    Else {
-        Do session.Add($zdt($h,3,1)_" "_log)
-    }
-
+    Set tag = $$$LOGTAG(level)
+    Set logDT = $zdt($h,3,1) _ " " _ tag _ " " _ log
+    Do session.Add(logDT)
+    
     Return $$$OK
 }
 
@@ -81,42 +65,6 @@ ClassMethod ClearLogs()
 {
     Set session = ..GetInstance()
     Do session.Logs.Clear()
-}
-
-Method Error(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [ERROR] "_log
-    Do ..Add(logDT)
-}
-
-Method Warning(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [WARNING] "_log
-    Do ..Add(logDT)
-}
-
-Method Info(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [INFO] "_log
-    Do ..Add(logDT)
-}
-
-Method Debug(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [DEBUG] "_log
-    Do ..Add(logDT)
-}
-
-Method Trace(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [TRACE] "_log
-    Do ..Add(logDT)
-}
-
-Method Log(log As %String)
-{
-    Set logDT = $zdt($h,3,1)_" [LOG] "_log
-    Do ..Add(logDT)
 }
 
 Method Add(log As %String)
