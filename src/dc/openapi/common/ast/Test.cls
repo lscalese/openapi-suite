@@ -40,20 +40,17 @@ ClassMethod Test() As %Status
         ;Do preparer.SetMainDocument({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flatten.json"),{"modelPackage":"myapp"})
         ;Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
         
-        Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapp"})
+        Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapplication.models"})
         Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml", {"modelPackage":"ssi"})
         Do preparer.AddDocument(errStream, "../common/error_response.yaml", {"modelPackage":"err"})
         
-        Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New()
-        Set pp.DocumentCollection = preparer.GetDocumentCollection()
-        
+        Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(preparer.GetDocumentCollection())
         Set tSc = pp.PreProcess()
         If $$$ISERR(tSc) {
             $$$ThrowStatus(tSc)
         }
         
-        Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New()
-        Set transformer.DocumentCollection = pp.DocumentCollection
+        Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New(pp.DocumentCollection)
         Set tSc = transformer.Transform()
         If $$$ISERR(tSc) {
             $$$ThrowStatus(tSc)

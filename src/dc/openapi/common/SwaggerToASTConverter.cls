@@ -14,6 +14,12 @@ Property Qualifiers As %String;
 
 Property UseAI As %Boolean [ InitialExpression = 1 ];
 
+Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection) As %Status
+{
+    Set ..DocumentCollection = DocumentCollection
+    Return $$$OK
+}
+
 Method Transform() As %Status
 {
     Set sc = $$$OK

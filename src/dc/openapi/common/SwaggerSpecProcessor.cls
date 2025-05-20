@@ -24,6 +24,12 @@ Property Errors As %DynamicObject [ InitialExpression = {{}} ];
 
 Property ExpectedExternalSwagger As list Of %String;
 
+Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection) As %Status
+{
+    Set ..DocumentCollection = DocumentCollection
+    Return $$$OK
+}
+
 Method PreProcess() As %Status
 {
     Set tSc = $$$OK
