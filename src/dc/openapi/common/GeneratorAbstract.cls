@@ -17,6 +17,8 @@ Property ClassName As %String;
 
 Property Super As %String [ InitialExpression = "%RegisteredObject" ];
 
+Property OverrideClassIfExists As %Boolean [ InitialExpression = 0 ];
+
 ClassMethod GetClassName(rootPackageName As %String, object As %RegisteredObject = "") As %String [ CodeMode = expression ]
 {
 rootPackageName _ $Select(..#SUBPKG'="":"."_..#SUBPKG,1:"") _ "." _ ..#NAME
@@ -33,6 +35,13 @@ Method Generate(object As %RegisteredObject) As %Dictionary.ClassDefinition [ Ab
 Method PackageGet() As %String
 {
     Return $Piece(..ClassName, ".", 1, * -1)
+}
+
+Method DeleteIfExists() As %Status
+{
+    Return:'##class(%Dictionary.ClassDefinition).%ExistsId(..ClassName) $$$OK
+    ; todo add security check to avoid deleting system classes
+    Return $SYSTEM.OBJ.Delete(..ClassName)
 }
 
 }

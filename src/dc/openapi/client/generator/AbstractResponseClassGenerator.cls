@@ -13,8 +13,11 @@ Method GenerateAll() As %Status
 
 Method Generate() As %Dictionary.ClassDefinition
 {
-    Set className = ..ClassName
+    If ..OverrideClassIfExists {
+        Do ..DeleteIfExists()
+    }
 
+    Set className = ..ClassName
     Set abstractResponseClass = ##class(%Dictionary.ClassDefinition).%New()
     Set abstractResponseClass.ProcedureBlock = $$$YES
     Set abstractResponseClass.Inheritance = "left"

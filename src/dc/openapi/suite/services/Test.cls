@@ -1,15 +1,17 @@
-Class dc.openapi.common.ast.Test Extends %RegisteredObject
+Include dc.openapi.common.macro
+
+Class dc.openapi.suite.services.Test
 {
 
 ClassMethod Test() As %Status
 {
-    Do ##class(dc.openapi.common.TinyLogger).StartSession({"verbose":1})
+    Set tSc = $$$OK
+    Do ##class(dc.openapi.common.TinyLogger).StartSession({"verbose":1,"level":($$$LEVELINFO)})
     Try{
         tro 
         ts
 
         Set oasFile = ##class(%Stream.FileCharacter).%New()
-        ;Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.json")
         Do oasFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/v1.yaml")
         Set oasStream = ##class(%Stream.GlobalCharacter).%New()
         Do oasStream.CopyFrom(oasFile)
@@ -24,27 +26,25 @@ ClassMethod Test() As %Status
         Set errStream = ##class(%Stream.GlobalCharacter).%New()
         Do errStream.CopyFrom(errFile)
 
-        Set dataTypesFile = ##class(%Stream.FileCharacter).%New()
-        Do dataTypesFile.LinkToFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_datatype.json")
-        Set dataTypesStream = ##class(%Stream.GlobalCharacter).%New()
-        Do dataTypesStream.CopyFrom(dataTypesFile)
-
-
-        ;Set nested = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_nested.json")
-        Set nested = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/test.json")
         
         Set preparer = ##class(dc.openapi.common.SwaggerDocumentPreparer).%New()
-        ;Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
-        
-        ;Do preparer.SetMainDocument(dataTypesStream)
-        ;Do preparer.SetMainDocument({}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flatten.json"),{"modelPackage":"myapp"})
-        ;Do preparer.SetMainDocument(nested,{"modelPackage":"myapp"})
-        
         Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapplication.models"})
         Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml", {"modelPackage":"ssi"})
         Do preparer.AddDocument(errStream, "../common/error_response.yaml", {"modelPackage":"err"})
         
+
+        Set expectedExternalDocument =##class(dc.openapi.suite.services.Generator).GetExpectedExternalDocument(preparer.GetDocumentCollection(), .missing)
+        If expectedExternalDocument '="" {
+            $$$LOGINFO("Expected external document: "_ $lts(expectedExternalDocument))
+            If missing '= "" {
+                $$$LOGWARNING("Missing external documents: "_ $lts(missing))
+                Quit
+            }
+        }
+       
+        
         Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(preparer.GetDocumentCollection())
+        
         Set tSc = pp.PreProcess()
         If $$$ISERR(tSc) {
             $$$ThrowStatus(tSc)
@@ -68,7 +68,6 @@ ClassMethod Test() As %Status
         Do $SYSTEM.Status.DisplayError(tSc)
     }
 
-    ;Do ##class(dc.openapi.common.TinyLogger).ShowLogs()
     Do ##class(dc.openapi.common.TinyLogger).StopSession()
     Return tSc
 }

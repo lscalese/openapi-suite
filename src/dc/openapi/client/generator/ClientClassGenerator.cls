@@ -7,6 +7,10 @@ Parameter NAME = "HttpClient";
 
 Method Generate() As %Dictionary.ClassDefinition
 {
+    If ..OverrideClassIfExists {
+        Do ..DeleteIfExists()
+    }
+    
     Set httpClientClass = ##class(%Dictionary.ClassDefinition).%New()
     Set httpClientClass.ProcedureBlock = $$$YES
     Set httpClientClass.Inheritance = "left"

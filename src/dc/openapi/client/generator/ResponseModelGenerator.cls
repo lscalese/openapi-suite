@@ -39,6 +39,10 @@ ClassMethod GenerateByPath(path As dc.openapi.common.ast.Path, packageName As %S
 
 Method Generate(path As dc.openapi.common.ast.Path) As %Dictionary.ClassDefinition
 {
+    If ..OverrideClassIfExists {
+        Do ..DeleteIfExists()
+    }
+    
     Set className = ..ClassName
 
     Set responseClassModel = ##class(%Dictionary.ClassDefinition).%New()

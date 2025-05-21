@@ -10,7 +10,11 @@ Property GenerateModels As %Boolean [ InitialExpression = 1 ];
 
 Property GenerateClientClass As %Boolean [ InitialExpression = 1 ];
 
+Property OverrideClientClass As %Boolean [ InitialExpression = 0 ];
+
 Property GenerateAbstractResponseClass As %Boolean [ InitialExpression = 1 ];
+
+Property OverrideAbstractResponseClass As %Boolean [ InitialExpression = 0 ];
 
 Property GenerateRequestClasses As %Boolean [ InitialExpression = 1 ];
 
@@ -21,10 +25,14 @@ Property GenerateOperationRequestClasses As array Of %Boolean;
 
 Property GenerateOperationRequestClassNames As array Of %String;
 
+Property OverrideOperationRequestClassNames As array Of %Boolean;
+
 /// The key is the operationId
 Property GenerateOperationResponseClasses As array Of %Boolean;
 
 Property GenerateOperationResponseClassNames As array Of %String;
+
+Property OverrideOperationResponseClassNames As array Of %Boolean;
 
 Property HttpClientClassName As %String;
 
@@ -45,6 +53,8 @@ Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
             Quit:key=""
             Do ..GenerateOperationRequestClasses.SetAt($$$YES, path.OperationId)
             Do ..GenerateOperationResponseClasses.SetAt($$$YES, path.OperationId)
+            Do ..OverrideOperationRequestClassNames.SetAt($$$NO, path.OperationId)
+            Do ..OverrideOperationResponseClassNames.SetAt($$$NO, path.OperationId)
             Set requestClassName = ##class(dc.openapi.client.generator.RequestModelGenerator).GetClassName(..Package, path)
             Set responseClassName = ##class(dc.openapi.client.generator.ResponseModelGenerator).GetClassName(..Package, path)
             Do ..GenerateOperationRequestClassNames.SetAt(requestClassName, path.OperationId)
