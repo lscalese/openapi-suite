@@ -27,7 +27,7 @@ Method Generate() As %Status
         $$$LOGINFO("Generating models...")
         Set tSc = ..GenerateModels()
         Set sc = $$$ADDSC(sc,tSc)
-        $$$LOGINFO("Models generation " _ $Select($$$ISOK(tSc):"completed successfully", 1:"failed with error: " _ $SYSTEM.Status.GetErrorText(tSc)))
+        $$$LOGSTATUS("Models generation " _ $Select($$$ISOK(tSc):"completed successfully", 1:"failed with error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
     } 
     Else {
         $$$LOGINFO("Models generation skipped based on configuration")
@@ -49,7 +49,7 @@ Method Generate() As %Status
         Set abstractResponseClass = abstractResponseClassGenerator.Generate()
         Set tSc = abstractResponseClass.%Save()
         Set sc = $$$ADDSC(sc,tSc)
-        $$$LOGDEBUG("Abstract response class saved with status: " _ $Select($$$ISOK(tSc):"OK", 1:$SYSTEM.Status.GetErrorText(tSc)))
+        $$$LOGSTATUS("Abstract response class saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
     }
 
     Set responseModelGenerator = ##class(dc.openapi.client.generator.ResponseModelGenerator).%New()
@@ -73,7 +73,7 @@ Method Generate() As %Status
             Set requestClassModel = requestModelGenerator.Generate(path)
             Set tSc = requestClassModel.%Save()
             Set sc = $$$ADDSC(sc,tSc)
-            $$$LOGDEBUG("Request class saved with status: " _ $Select($$$ISOK(tSc):"OK", 1:$SYSTEM.Status.GetErrorText(tSc)))
+            $$$LOGSTATUS("Request class '" _ requestModelClassName _ "' saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
         } Else {
             $$$LOGDEBUG("Skipping request model generation for operation: " _ path.OperationId)
         }
@@ -85,7 +85,7 @@ Method Generate() As %Status
             Set responseClassModel = responseModelGenerator.Generate(path)
             Set tSc = responseClassModel.%Save()
             Set sc = $$$ADDSC(sc,tSc)
-            $$$LOGDEBUG("Response class saved with status: " _ $Select($$$ISOK(tSc):"OK", 1:$SYSTEM.Status.GetErrorText(tSc)))
+            $$$LOGSTATUS("Response class '" _ responseModelClassName _ "' saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
         } Else {
             $$$LOGDEBUG("Skipping response model generation for operation: " _ path.OperationId)
         }
@@ -102,10 +102,10 @@ Method Generate() As %Status
         $$$LOGINFO("Saving HTTP client class...")
         Set tSc = httpClientClass.%Save()
         Set sc = $$$ADDSC(sc,tSc)
-        $$$LOGINFO("HTTP client class saved with status: " _ $Select($$$ISOK(tSc):"OK", 1:$SYSTEM.Status.GetErrorText(tSc)))
+        $$$LOGSTATUS("HTTP client class saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
     }
 
-    $$$LOGINFO("HTTP Client generation " _ $Select($$$ISOK(sc):"completed successfully", 1:"completed with issues: " _ $SYSTEM.Status.GetErrorText(sc)))
+    $$$LOGSTATUS("HTTP Client generation " _ $Select($$$ISOK(sc):"completed successfully", 1:"completed with issues: " _ $SYSTEM.Status.GetErrorText(sc)),sc)
     Return sc
 }
 
@@ -134,10 +134,10 @@ Method GenerateModels() As %Status
         Set tScLocal = classDef.%Save()
         Set:$$$ISERR(tScLocal) tSc = $$$ADDSC(tSc,tScLocal)
         
-        $$$LOGDEBUG("Model " _ model.Name _ " saved with status: " _ $Select($$$ISOK(tScLocal):"OK", 1:$SYSTEM.Status.GetErrorText(tScLocal)))
+        $$$LOGSTATUS("Model '" _ model.Name _ "' saved with " _ $Select($$$ISOK(tScLocal):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tScLocal)),tScLocal)
     }
     
-    $$$LOGINFO("Generated " _ modelCount _ " model classes with final status: " _ $Select($$$ISOK(tSc):"OK", 1:$SYSTEM.Status.GetErrorText(tSc)))
+    $$$LOGSTATUS("Generated " _ modelCount _ " model classes with " _ $Select($$$ISOK(tSc):"success", 1:"errors: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
     Return tSc
 }
 

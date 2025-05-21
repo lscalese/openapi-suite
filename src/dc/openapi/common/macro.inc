@@ -27,3 +27,5 @@ ROUTINE dc.openapi.common.macro [Type=INC]
 
 #define LOGTRACEENABLED                     (##class(dc.openapi.common.TinyLogger).GetInstance().Level>=$$$LEVELTRACE)
 #define LOGDEBUGENABLED                     (##class(dc.openapi.common.TinyLogger).GetInstance().Level>=$$$LEVELDEBUG)
+
+#define LOGSTATUS(%log,%status)             If $$$ISERR(%status) { $$$LOGERROR(%log) } Else { $$$LOGINFO(%log) }
