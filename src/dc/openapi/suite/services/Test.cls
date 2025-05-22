@@ -28,22 +28,17 @@ ClassMethod Test() As %Status
 
         
         Set preparer = ##class(dc.openapi.common.SwaggerDocumentPreparer).%New()
-        Do preparer.SetMainDocument(oasStream,{"modelPackage":"myapplication.models"})
-        Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml", {"modelPackage":"ssi"})
-        Do preparer.AddDocument(errStream, "../common/error_response.yaml", {"modelPackage":"err"})
+        Do preparer.SetMainDocument(oasStream)
+        Do preparer.AddDocument(ssiStream, "../common/ssi_types.yaml")
+        Do preparer.AddDocument(errStream, "../common/error_response.yaml")
         
+        Set documentCollection = preparer.GetDocumentCollection()
 
-        Set expectedExternalDocument =##class(dc.openapi.suite.services.Generator).GetExpectedExternalDocument(preparer.GetDocumentCollection(), .missing)
-        If expectedExternalDocument '="" {
-            $$$LOGINFO("Expected external document: "_ $lts(expectedExternalDocument))
-            If missing '= "" {
-                $$$LOGWARNING("Missing external documents: "_ $lts(missing))
-                Quit
-            }
+        Set validationResult = ##class(dc.openapi.suite.services.Generator).DocumentCollectionValidation(documentCollection)
+        if 'validationResult.IsValid {
+            $$$LOGERROR("Validation failed")
         }
-       
-        
-        Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(preparer.GetDocumentCollection())
+        Set pp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(documentCollection)
         
         Set tSc = pp.PreProcess()
         If $$$ISERR(tSc) {
@@ -55,8 +50,15 @@ ClassMethod Test() As %Status
         If $$$ISERR(tSc) {
             $$$ThrowStatus(tSc)
         }
+        
+        Set variables(##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY) = "myapplication.models.common"
+        Set variables("../common/ssi_types.yaml") = "myapplication.models.ssi"
+        Set variables("../common/error_response.yaml") = "myapplication.models.err"
+        
+        Set AST = ##class(dc.openapi.suite.services.Generator).ASTRevolve(transformer.AST, .variables)
+        Kill transformer
 
-        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", transformer.AST)
+        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", AST)
         Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New(httpClientGenConfig)
         Set tsc = httpClientGenerator.Generate()
         If $$$ISERR(tsc) {

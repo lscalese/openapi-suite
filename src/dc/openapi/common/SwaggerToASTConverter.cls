@@ -491,10 +491,21 @@ Method GetParameter(paramItem As %DynamicObject) As dc.openapi.common.ast.Parame
 }
 
 /// Return the class name from a "$ref" components.schemas.
-Method GetClassName(ref As %String) As %String
+Method GetClassName(ref As %String, includePackage As %Boolean = {$$$YES}, resolvePackage As %Boolean = {$$$NO}) As %String
 {
-    Set documentReference = ..DocumentCollection.GetItem($Piece(ref, "#", 1))
-    Set package = documentReference.GetModelPackage()
+    Set package = ""
+    If includePackage {
+        Do ##class(dc.openapi.common.ReferenceAnalyzer).DecomposeRef(ref, .part)
+        Set documentReference = ..DocumentCollection.GetItem(part("external"))
+        If resolvePackage {
+            Set package = documentReference.GetModelPackage()
+        }
+        Else {
+            ; Set a {{key}} to resolve the package later
+            Set packageKey = $Select(part("external")'="":part("external"), 1: ##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY)
+            Set package = "{{" _ packageKey _"}}"
+        }
+    }
     Set className = ##class(dc.openapi.common.NamingConvention).NormalizeClassName($Piece(ref, "/", *), package)
     Return className
 }

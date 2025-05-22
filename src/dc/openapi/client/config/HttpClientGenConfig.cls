@@ -38,6 +38,8 @@ Property HttpClientClassName As %String;
 
 Property AbstractResponseClassName As %String;
 
+Property ProcessOperationId As array Of %String;
+
 Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
 {
     Set ..AST = AST
@@ -51,6 +53,7 @@ Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
         For  {
             Set path = AST.Paths.GetNext(.key)
             Quit:key=""
+            Do ..ProcessOperationId.SetAt($$$YES, path.OperationId)
             Do ..GenerateOperationRequestClasses.SetAt($$$YES, path.OperationId)
             Do ..GenerateOperationResponseClasses.SetAt($$$YES, path.OperationId)
             Do ..OverrideOperationRequestClassNames.SetAt($$$NO, path.OperationId)

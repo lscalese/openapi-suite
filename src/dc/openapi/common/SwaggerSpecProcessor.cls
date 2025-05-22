@@ -24,6 +24,8 @@ Property Errors As %DynamicObject [ InitialExpression = {{}} ];
 
 Property ExpectedExternalSwagger As list Of %String;
 
+Property ValidationResult As dc.openapi.common.ValidationResult [ InitialExpression = {##class(dc.openapi.common.ValidationResult).%New()} ];
+
 Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection) As %Status
 {
     Set ..DocumentCollection = DocumentCollection
@@ -138,6 +140,7 @@ Method Validate() As %Boolean
                 $$$LOGERROR("Undefined reference in document: "_ref)
                 Set:'..Errors.%IsDefined("UndefinedReferences") ..Errors.UndefinedReferences = []
                 Do ..Errors.UndefinedReferences.%Push({"document": (key), "reference": (ref)})
+                Do ..ValidationResult.UndefinedReferences.Insert("Undefined Reference in document "_key _" : "_ref)
                 Set:isValid isValid = $$$NO
             }
             Else {
@@ -157,9 +160,12 @@ Method Validate() As %Boolean
         If '..DocumentCollection.ItemExists(key) {
             $$$LOGERROR("Missing external document: "_key)
             Do ..Errors.MissingExternalSwagger.%Push(key)
+            Do ..ValidationResult.MissingExternalDocuments.Insert(key)
             Set:isValid isValid = $$$NO
         }
     }
+
+    Set ..ValidationResult.IsValid = isValid
 
     Return isValid
 
@@ -168,6 +174,7 @@ alimUniqueExternal
     If externalPart '= "" && '$Data(uniqueExternal(externalPart)) {
         Set uniqueExternal(externalPart) = ""
         Do ..ExpectedExternalSwagger.Insert(externalPart)
+        Do ..ValidationResult.ExpectedExternalDocuments.Insert(externalPart)
     }
     Quit 1
 }

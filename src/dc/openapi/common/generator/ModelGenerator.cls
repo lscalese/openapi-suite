@@ -76,4 +76,9 @@ ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelPropert
     Return propDef
 }
 
+ClassMethod GetClassName(rootPackageName As %String, object As dc.openapi.common.ast.Model) As %String [ CodeMode = expression ]
+{
+rootPackageName _ $Select(..#SUBPKG'="":"."_..#SUBPKG,1:"") _ "." _ object.Name
+}
+
 }

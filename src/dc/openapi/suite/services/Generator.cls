@@ -1,41 +1,11 @@
 Class dc.openapi.suite.services.Generator
 {
 
-ClassMethod DocumentCollectionIsValid(documentCollection As dc.openapi.common.SwaggerDocumentCollection, ByRef Errors As %DynamicObject) As %Boolean
+ClassMethod DocumentCollectionValidation(documentCollection As dc.openapi.common.SwaggerDocumentCollection) As dc.openapi.common.ValidationResult
 {
-    Set ssp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(documentCollection)
-    Set isValid = ssp.Validate()
-    Set Errors = $Select(isValid:"", 1:ssp.Errors)
-    Return isValid
-}
-
-ClassMethod GetExpectedExternalDocument(documentCollection As dc.openapi.common.SwaggerDocumentCollection, Output missing As %List) As %List
-{
-    Set expectedExternalDocument = "", missing = ""
     Set ssp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(documentCollection)
     Do ssp.Validate()
-    Return:ssp.ExpectedExternalSwagger.Count()=0 expectedExternalDocument
-    Set expectedExternalDocument = ssp.ExpectedExternalSwagger.Serialize()
-    Set missing = ..GetMissingExternalDocumentFromSSP(ssp)
-    Return expectedExternalDocument
-}
-
-ClassMethod GetMissingExternalDocument(documentCollection As dc.openapi.common.SwaggerDocumentCollection) As %List
-{
-    Set ssp = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(documentCollection)
-    Set isValid = ssp.Validate()
-    Return ..GetMissingExternalDocumentFromSSP(ssp)
-}
-
-ClassMethod GetMissingExternalDocumentFromSSP(ssp As dc.openapi.common.SwaggerSpecProcessor) As %List [ Private ]
-{
-    Return:'$IsObject(ssp.Errors.MissingExternalSwagger) ""
-    Set missingExternalDocument = ""
-    Set iterator = ssp.Errors.MissingExternalSwagger.%GetIterator()
-    While iterator.%GetNext(.key, .value) {
-        Set $List(missingExternalDocument, *+1) = value
-    } 
-    Return missingExternalDocument
+    Return ssp.ValidationResult
 }
 
 ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.SwaggerDocumentCollection, Output AST As dc.openapi.common.ast.OAS) As %Status
@@ -44,6 +14,29 @@ ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.Swag
     Set tSc = transformer.Transform()
     Set AST = transformer.AST
     Return tSc
+}
+
+ClassMethod ASTRevolve(ASTInput As dc.openapi.common.ast.OAS, ByRef variables As %Binary) As dc.openapi.common.ast.OAS
+{
+    Set gcs = ##class(%Stream.GlobalCharacter).%New(), resolvedGCS = ##class(%Stream.GlobalCharacter).%New()
+    Do ASTInput.%JSONExportToStream(.gcs)
+
+    While 'gcs.AtEnd {
+        Set line = gcs.ReadLine()
+
+        Set key = ""
+        For  {
+            Set key = $Order(variables(key), 1, value)
+            Quit:key=""
+            Set line = $Replace(line, "{{" _ key _ "}}", value)
+        }
+        Do resolvedGCS.WriteLine(line)
+    }
+
+    Do resolvedGCS.Rewind()
+    Set outAST = ##class(dc.openapi.common.ast.OAS).%New()
+    Do outAST.%JSONImport(resolvedGCS)
+    Return outAST
 }
 
 }

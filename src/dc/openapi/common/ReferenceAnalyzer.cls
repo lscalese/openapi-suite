@@ -59,7 +59,9 @@ ClassMethod ReferenceIsDefined(oas As %DynamicObject, ref As %String) As %Boolea
         Return $$$NO
     }
 
-    Set subPart = $Piece(ref, "#/", 2)
+    Do ..DecomposeRef(ref, .part)
+    Set subPart = part("internal")
+    
     If subPart = "" {
         ; The reference is the received object itself
         Return $$$YES
@@ -86,7 +88,8 @@ ClassMethod ReferenceIsDefined(oas As %DynamicObject, ref As %String) As %Boolea
 ClassMethod GetObjectByRef(currentDocument As %DynamicObject, ref As %String, documentCollection As dc.openapi.common.SwaggerDocumentCollection) As %DynamicObject
 {
     Set document = currentDocument
-    Set externalPart = $Piece(ref, "#", 1)
+    Do ..DecomposeRef(ref, .part)
+    Set externalPart = part("external")
     If externalPart '= "" {
         Set documentReference = documentCollection.GetItem(externalPart)
         Set document = documentReference.Document
@@ -96,8 +99,8 @@ ClassMethod GetObjectByRef(currentDocument As %DynamicObject, ref As %String, do
 
 ClassMethod GetObjectByDocumentAndRef(document As %DynamicObject, ref As %String) As %DynamicObject
 {
-    Set subPart = $Piece(ref, "#/", 2)
-    Set list = $ListFromString(subPart, "/"), ptr = 0, value = document
+    Do ..DecomposeRef(ref, .part)
+    Set list = $ListFromString(part("internal"), "/"), ptr = 0, value = document
 
     While $ListNext(list, ptr, key) {
         Set value = value.%Get(key) 
@@ -124,11 +127,14 @@ ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, pr
     Return $$$OK
 }
 
-ClassMethod DecomposeRef(ref As %String, Output externalPart As %String, Output internalPart As %String) As %Status
+ClassMethod DecomposeRef(ref As %String, ByRef part As %Binary) As %Status
 {
-    Set (externalPart, internalPart) = ""
-    Set externalPart = $Piece(ref, "#", 1)
-    Set internalPart = $Piece(ref, "#/", 2)
+    
+    Set part("external") = $Piece(ref, "#", 1)
+    Set part("internal") = $Piece(ref, "#/", 2)
+    Set part("type") = $Piece(ref, "/", *-1)
+    Set part("name") = $Piece(ref, "/", *)
+
     Return $$$OK
 }
 

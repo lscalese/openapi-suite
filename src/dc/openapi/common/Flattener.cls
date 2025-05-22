@@ -25,7 +25,7 @@ ClassMethod test()
     
     
     Set documentCollection = ##class(dc.openapi.common.SwaggerDocumentCollection).%New()
-    Do documentCollection.AddItem(oas, "$MAIN")
+    Do documentCollection.AddItem(oas, ##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY)
 
     Set flattener = ##class(dc.openapi.common.Flattener).%New()
     Set flattener.DocumentCollection = documentCollection

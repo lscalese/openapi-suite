@@ -19,7 +19,7 @@
             AuthenticationMethods="64" 
             Recurse="1"
             MatchRoles=":%DB_${Namespace}"
-            DispatchClass="dc.openapi.suite.api.disp"/>
+            DispatchClass="dc.openapi.suite.apiv2.Dispatcher"/>
       
       <CSPApplication
             SourcePath="/web"

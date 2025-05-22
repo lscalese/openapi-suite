@@ -33,19 +33,29 @@ Method Generate() As %Status
         $$$LOGINFO("Models generation skipped based on configuration")
     }
 
+    Set httpClientClass = ""
     If ..Config.GenerateClientClass {
         $$$LOGINFO("Generating HTTP client class: " _ ..Config.HttpClientClassName)
         Set clientClassGenerator = ##class(dc.openapi.client.generator.ClientClassGenerator).%New()
         Set clientClassGenerator.ClassName = ..Config.HttpClientClassName
+        Set clientClassGenerator.OverrideClassIfExists = ..Config.OverrideClientClass
         Set clientClassGenerator.AST = AST
         Set httpClientClass = clientClassGenerator.Generate()
         $$$LOGDEBUG("HTTP client class structure generated")
+    }
+    Else { ; open the class definition if exists
+        $$$LOGINFO("HTTP client class generation skipped based on configuration")
+        Set httpClientClass = ##class(%Dictionary.ClassDefinition).%OpenId(..Config.HttpClientClassName)
+        If httpClientClass = "" {
+            $$$LOGWARNING("HTTP client class '" _ ..Config.HttpClientClassName _ "' not found")
+        }
     }
 
     If ..Config.GenerateAbstractResponseClass {
         $$$LOGINFO("Generating abstract response class: " _ ..Config.AbstractResponseClassName)
         Set abstractResponseClassGenerator = ##class(dc.openapi.client.generator.AbstractResponseClassGenerator).%New()
         Set abstractResponseClassGenerator.ClassName = ..Config.AbstractResponseClassName
+        Set abstractResponseClassGenerator.OverrideClassIfExists = ..Config.OverrideAbstractResponseClass
         Set abstractResponseClass = abstractResponseClassGenerator.Generate()
         Set tSc = abstractResponseClass.%Save()
         Set sc = $$$ADDSC(sc,tSc)
@@ -62,6 +72,11 @@ Method Generate() As %Status
     For  {
         Set path = AST.Paths.GetNext(.key)
         Quit:key=""
+
+        If '..Config.ProcessOperationId.GetAt(path.OperationId) {
+            $$$LOGDEBUG("Skipping path: " _ path.OperationId)
+            Continue
+        }
         
         Set pathCount = pathCount + 1
         $$$LOGDEBUG("Processing path #" _ pathCount _ ": operation=" _ path.OperationId)
@@ -70,11 +85,13 @@ Method Generate() As %Status
         If ..Config.GenerateOperationRequestClasses.GetAt(path.OperationId) {
             $$$LOGDEBUG("Generating request model class: " _ requestModelClassName)
             Set requestModelGenerator.ClassName = requestModelClassName
+            Set requestModelGenerator.OverrideClassIfExists = ''..Config.OverrideOperationRequestClassNames.GetAt(path.OperationId)
             Set requestClassModel = requestModelGenerator.Generate(path)
             Set tSc = requestClassModel.%Save()
             Set sc = $$$ADDSC(sc,tSc)
             $$$LOGSTATUS("Request class '" _ requestModelClassName _ "' saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
-        } Else {
+        } 
+        Else {
             $$$LOGDEBUG("Skipping request model generation for operation: " _ path.OperationId)
         }
 
@@ -82,23 +99,28 @@ Method Generate() As %Status
         If ..Config.GenerateOperationResponseClasses.GetAt(path.OperationId) {
             $$$LOGDEBUG("Generating response model class: " _ responseModelClassName)
             Set responseModelGenerator.ClassName = responseModelClassName
+            Set responseModelGenerator.OverrideClassIfExists = ''..Config.OverrideOperationResponseClassNames.GetAt(path.OperationId)
             Set responseClassModel = responseModelGenerator.Generate(path)
             Set tSc = responseClassModel.%Save()
             Set sc = $$$ADDSC(sc,tSc)
             $$$LOGSTATUS("Response class '" _ responseModelClassName _ "' saved with " _ $Select($$$ISOK(tSc):"success", 1:"error: " _ $SYSTEM.Status.GetErrorText(tSc)),tSc)
-        } Else {
+        } 
+        Else {
             $$$LOGDEBUG("Skipping response model generation for operation: " _ path.OperationId)
         }
 
-        If ..Config.GenerateClientClass {
+        If $IsObject(httpClientClass), '##class(%Dictionary.MethodDefinition).%ExistsId(httpClientClass_"||"_path.OperationId) {
             $$$LOGDEBUG("Adding operation method for: " _ path.OperationId)
             Set operationMethod = clientClassGenerator.GetOperationMethod(path, requestModelClassName, responseModelClassName)
             Do httpClientClass.Methods.Insert(operationMethod)
         }
+        Else {
+            $$$LOGDEBUG("Skipping adding operation method generation for: " _ path.OperationId _ "(httpClientClass not found or method already exists)")
+        }
     }
     $$$LOGINFO("Processed " _ pathCount _ " API paths")
 
-    If ..Config.GenerateClientClass {
+    If $IsObject(httpClientClass) {
         $$$LOGINFO("Saving HTTP client class...")
         Set tSc = httpClientClass.%Save()
         Set sc = $$$ADDSC(sc,tSc)
