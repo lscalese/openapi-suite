@@ -19,7 +19,9 @@ Method Generate() As %Status
 {
     Set sc = $$$OK
 
-    Set AST = ..Config.AST
+    #dim ASTReference As dc.openapi.common.ASTReference
+    Set ASTReference = ..Config.ASTReference
+    
 
     $$$LOGINFO("Generating HTTP Client classes...")
 
@@ -39,7 +41,7 @@ Method Generate() As %Status
         Set clientClassGenerator = ##class(dc.openapi.client.generator.ClientClassGenerator).%New()
         Set clientClassGenerator.ClassName = ..Config.HttpClientClassName
         Set clientClassGenerator.OverrideClassIfExists = ..Config.OverrideClientClass
-        Set clientClassGenerator.AST = AST
+        Set clientClassGenerator.ASTReference = ASTReference
         Set httpClientClass = clientClassGenerator.Generate()
         $$$LOGDEBUG("HTTP client class structure generated")
     }
@@ -70,7 +72,7 @@ Method Generate() As %Status
     Set key = ""
     Set pathCount = 0
     For  {
-        Set path = AST.Paths.GetNext(.key)
+        Set path = ASTReference.AST.Paths.GetNext(.key)
         Quit:key=""
 
         If '..Config.ProcessOperationId.GetAt(path.OperationId) {

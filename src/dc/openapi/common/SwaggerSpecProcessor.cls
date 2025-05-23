@@ -170,7 +170,9 @@ Method Validate() As %Boolean
     Return isValid
 
 alimUniqueExternal
-    Set externalPart = $Piece(ref, "#", 1)
+    kill part
+    Do ##class(dc.openapi.common.ReferenceAnalyzer).DecomposeRef(ref, .part)
+    Set externalPart = part("external")
     If externalPart '= "" && '$Data(uniqueExternal(externalPart)) {
         Set uniqueExternal(externalPart) = ""
         Do ..ExpectedExternalSwagger.Insert(externalPart)
@@ -181,14 +183,16 @@ alimUniqueExternal
 
 Method ReferenceIsDefined(document As %DynamicObject, ref As %String) As %Boolean
 {
-    If $Extract(ref) = "#" {
+    Do ##class(dc.openapi.common.ReferenceAnalyzer).DecomposeRef(ref, .part)
+
+    If part("external") = "" {
         ; It's an internal reference
         Return ##class(dc.openapi.common.ReferenceAnalyzer).ReferenceIsDefined(document, ref)
     }
 
     ; It's an external reference
     ; Check if the external reference is already in the list
-    Set key = $Piece(ref, "#", 1)
+    Set key = part("external")
     Set document = ..DocumentCollection.GetDocument(key, .found)
     If 'found Return $$$NO
 

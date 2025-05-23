@@ -46,7 +46,7 @@ Method ItemExists(key As %String) As %Boolean
     Return ..Items.IsDefined(key)
 }
 
-Method GetMainItem() As %DynamicObject
+Method GetMainItem() As dc.openapi.common.SwaggerDocumentReference
 {
     Set item = ..Items.GetAt(..#MAINKEY)
     If '$IsObject(item) {

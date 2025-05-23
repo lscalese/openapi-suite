@@ -3,15 +3,6 @@ Class dc.openapi.common.ReferenceAnalyzer Extends %RegisteredObject
 
 Parameter SEPARATOR = ".";
 
-ClassMethod Test()
-{
-    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json")
-    ;Do ..CollectOASReferences(oas, .out)
-    Set list = ..GetListOfRefs(oas)
-    zw list
-    Return $$$OK
-}
-
 ClassMethod GetListOfRefs(oas As %DynamicObject, internal As %Boolean = {$$$YES}, external As %Boolean = {$$$NO}) As %List
 {
     Set list = "", k = ""
@@ -129,12 +120,10 @@ ClassMethod CollectOASReferences(oas As %DynamicObject, ByRef out As %Binary, pr
 
 ClassMethod DecomposeRef(ref As %String, ByRef part As %Binary) As %Status
 {
-    
     Set part("external") = $Piece(ref, "#", 1)
     Set part("internal") = $Piece(ref, "#/", 2)
     Set part("type") = $Piece(ref, "/", *-1)
     Set part("name") = $Piece(ref, "/", *)
-
     Return $$$OK
 }
 

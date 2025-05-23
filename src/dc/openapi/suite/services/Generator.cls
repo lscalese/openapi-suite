@@ -8,11 +8,24 @@ ClassMethod DocumentCollectionValidation(documentCollection As dc.openapi.common
     Return ssp.ValidationResult
 }
 
-ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.SwaggerDocumentCollection, Output AST As dc.openapi.common.ast.OAS) As %Status
+ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.SwaggerDocumentCollection, Output ASTCollection As dc.openapi.common.ASTCollection) As %Status
 {
     Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New(documentCollection)
-    Set tSc = transformer.Transform()
-    Set AST = transformer.AST
+    Set tSc = transformer.TransformAll()
+    Set ASTCollection = transformer.ASTCollection
+    Return tSc
+}
+
+ClassMethod ASTCollectionResolve(ASTCollection As dc.openapi.common.ASTCollection, ByRef variables As %Binary) As %Status
+{
+    #dim astRef As dc.openapi.common.ASTReference
+    Set tSc = $$$OK
+    Set index = ""
+    For  {
+        Set astRef = ASTCollection.ASTs.GetNext(.index)
+        Quit:index=""
+        Set astRef.AST = ##class(dc.openapi.suite.services.Generator).ASTRevolve(astRef.AST, .variables)
+    }
     Return tSc
 }
 

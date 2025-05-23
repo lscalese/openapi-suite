@@ -1,7 +1,9 @@
 Class dc.openapi.client.config.HttpClientGenConfig Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
-Property AST As dc.openapi.common.ast.OAS;
+Property ASTReference As dc.openapi.common.ASTReference;
+
+Property AST As dc.openapi.common.ast.OAS [ Calculated, Private ];
 
 /// Package de base pour générer les classes
 Property Package As %String;
@@ -40,14 +42,14 @@ Property AbstractResponseClassName As %String;
 
 Property ProcessOperationId As array Of %String;
 
-Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
+Method %OnNew(pPackage As %String, ASTReference As dc.openapi.common.ASTReference) As %Status
 {
-    Set ..AST = AST
+    Set ..ASTReference = ASTReference
     Set ..Package = pPackage
-    
     Set ..HttpClientClassName = ##class(dc.openapi.client.generator.ClientClassGenerator).GetClassName(..Package)
     Set ..AbstractResponseClassName = ##class(dc.openapi.client.generator.AbstractResponseClassGenerator).GetClassName(..Package)
-
+    Set AST = ASTReference.AST
+    
     If $IsObject(AST), $IsObject(AST.Paths) {
         Set key = ""
         For  {
@@ -66,6 +68,11 @@ Method %OnNew(pPackage As %String, AST As dc.openapi.common.ast.OAS) As %Status
     }
 
     Return $$$OK
+}
+
+Method ASTGet() As dc.openapi.common.ast.OAS [ CodeMode = expression ]
+{
+..ASTReference.AST
 }
 
 }

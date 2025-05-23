@@ -9,7 +9,9 @@ Parameter SUBPKG;
 /// Should be overridden in the subclass
 Parameter NAME;
 
-Property AST As dc.openapi.common.ast.OAS;
+Property ASTReference As dc.openapi.common.ASTReference;
+
+Property AST As dc.openapi.common.ast.OAS [ Calculated, Private ];
 
 Property Package As %String [ Calculated ];
 
@@ -42,6 +44,11 @@ Method DeleteIfExists() As %Status
     Return:'##class(%Dictionary.ClassDefinition).%ExistsId(..ClassName) $$$OK
     ; todo add security check to avoid deleting system classes
     Return $SYSTEM.OBJ.Delete(..ClassName)
+}
+
+Method ASTGet() As dc.openapi.common.ast.OAS [ CodeMode = expression ]
+{
+..ASTReference.AST
 }
 
 }

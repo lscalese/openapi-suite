@@ -44,21 +44,17 @@ ClassMethod Test() As %Status
         If $$$ISERR(tSc) {
             $$$ThrowStatus(tSc)
         }
-        
-        Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New(pp.DocumentCollection)
-        Set tSc = transformer.Transform()
-        If $$$ISERR(tSc) {
-            $$$ThrowStatus(tSc)
-        }
+
+        #dim astCollection As dc.openapi.common.ASTCollection
+        Set astCollection = ##class(dc.openapi.common.SwaggerToASTConverter).ToASTCollection(documentCollection)
         
         Set variables(##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY) = "myapplication.models.common"
         Set variables("../common/ssi_types.yaml") = "myapplication.models.ssi"
         Set variables("../common/error_response.yaml") = "myapplication.models.err"
-        
-        Set AST = ##class(dc.openapi.suite.services.Generator).ASTRevolve(transformer.AST, .variables)
-        Kill transformer
-
-        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", AST)
+       
+        Do ##class(dc.openapi.suite.services.Generator).ASTCollectionResolve(astCollection, .variables)
+       
+        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", astCollection.ASTs.GetAt(1))
         Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New(httpClientGenConfig)
         Set tsc = httpClientGenerator.Generate()
         If $$$ISERR(tsc) {

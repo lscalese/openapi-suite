@@ -4,15 +4,19 @@ Include dc.openapi.common.macro
 Class dc.openapi.common.SwaggerToASTConverter Extends %RegisteredObject
 {
 
-Property OAS As %DynamicObject;
-
 Property DocumentCollection As dc.openapi.common.SwaggerDocumentCollection [ InitialExpression = {##class(dc.openapi.common.SwaggerDocumentCollection).%New()} ];
 
-Property AST As dc.openapi.common.ast.OAS;
+Property CurrentDocumentReference As dc.openapi.common.SwaggerDocumentReference;
 
-Property Qualifiers As %String;
+Property AST As dc.openapi.common.ast.OAS [ InitialExpression = {##class(dc.openapi.common.ast.OAS).%New()}, Private ];
 
-Property UseAI As %Boolean [ InitialExpression = 1 ];
+/// not implemented yet
+Property UseAI As %Boolean [ InitialExpression = 0 ];
+
+/// Internal use (it's just a shortcut to ..CurrentDocumentReference.Document)
+Property OAS As %DynamicObject [ Calculated, Private ];
+
+Property ASTCollection As dc.openapi.common.ASTCollection [ InitialExpression = {##class(dc.openapi.common.ASTCollection).%New()} ];
 
 Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection) As %Status
 {
@@ -20,14 +24,43 @@ Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection)
     Return $$$OK
 }
 
+Method SetCurrentDocumentReference(documentReference As dc.openapi.common.SwaggerDocumentReference) As %Status
+{
+    Set ..CurrentDocumentReference = documentReference
+    Return $$$OK
+}
+
+ClassMethod ToASTCollection(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection, Output tSc As %Status = {$$$OK}) As dc.openapi.common.ASTCollection
+{
+    Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New(DocumentCollection)
+    Set tSc = transformer.TransformAll()
+    Set ASTCollection = transformer.ASTCollection
+    Return ASTCollection
+}
+
+Method TransformAll() As %Status
+{
+    Set sc = $$$OK
+
+    Set key = ""
+    For  {
+        Set documentReference = ..DocumentCollection.Items.GetNext(.key)
+        Quit:key=""
+        Do ..SetCurrentDocumentReference(documentReference)
+        Set tSc = ..Transform()
+        Set sc = $$$ADDSC(sc, tSc)
+    }
+
+    Return sc
+}
+
+/// Convert the `CurrentDocumentReference` to AST 
 Method Transform() As %Status
 {
     Set sc = $$$OK
 
     $$$LOGINFO("Starting SwaggerToASTConverter...")
-
-    Set ..OAS = ..DocumentCollection.GetMainDocument()
-    Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
+    
     Do ..Info()
     Do ..Servers()
     Do ..Paths()
@@ -50,6 +83,9 @@ Method Transform() As %Status
         $$$LOGTRACE("SwaggerToASTConverter result:" _ $$$NL _formattedJSON)
         Kill formattedJSON
     }
+
+    Set astRef = ##class(dc.openapi.common.ASTReference).%New(..CurrentDocumentReference.Key, ..AST)
+    Do ..ASTCollection.SafeInsert(astRef)
 
     If $$$ISERR(sc) {
         $$$LOGERROR("Error in SwaggerToASTConverter: "_$SYSTEM.Status.GetErrorText(sc))
@@ -494,19 +530,19 @@ Method GetParameter(paramItem As %DynamicObject) As dc.openapi.common.ast.Parame
 Method GetClassName(ref As %String, includePackage As %Boolean = {$$$YES}, resolvePackage As %Boolean = {$$$NO}) As %String
 {
     Set package = ""
+    Do ##class(dc.openapi.common.ReferenceAnalyzer).DecomposeRef(ref, .part)
     If includePackage {
-        Do ##class(dc.openapi.common.ReferenceAnalyzer).DecomposeRef(ref, .part)
         Set documentReference = ..DocumentCollection.GetItem(part("external"))
         If resolvePackage {
             Set package = documentReference.GetModelPackage()
         }
         Else {
             ; Set a {{key}} to resolve the package later
-            Set packageKey = $Select(part("external")'="":part("external"), 1: ##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY)
+            Set packageKey = $Select(part("external")'="":part("external"), 1: ..CurrentDocumentReference.Key)
             Set package = "{{" _ packageKey _"}}"
         }
     }
-    Set className = ##class(dc.openapi.common.NamingConvention).NormalizeClassName($Piece(ref, "/", *), package)
+    Set className = ##class(dc.openapi.common.NamingConvention).NormalizeClassName(part("name"), package)
     Return className
 }
 
@@ -520,6 +556,15 @@ Method GetReference(ref As %String, Output found As %Boolean) As %DynamicObject
         Set found = $$$NO
     }
     Return object
+}
+
+Method OASGet() As %DynamicObject
+{
+    Set OAS = ""
+    If $IsObject(..CurrentDocumentReference) {
+        Set OAS = ..CurrentDocumentReference.Document
+    }
+    Return OAS
 }
 
 ClassMethod GetObjectScriptType(oaType As %DynamicObject, format As %String = "") As %String
