@@ -182,7 +182,7 @@
           }
         }
       },
-      "DocumentSettings": {
+      "GenerateModelSettings": {
         "type": "object",
         "properties": {
           "key": {
@@ -192,6 +192,14 @@
           "modelPackage": {
             "type": "string",
             "description": "Model package name associated with the document"
+          }
+        }
+      },
+      "GenerateModelsRequest": {
+        "type": "object",
+        "properties": {
+          "ASTCollection": {
+            "$ref": "#/components/schemas/ASTCollection"
           }
         }
       },

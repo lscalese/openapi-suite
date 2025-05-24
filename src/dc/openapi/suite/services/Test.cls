@@ -47,12 +47,12 @@ ClassMethod Test() As %Status
 
         #dim astCollection As dc.openapi.common.ASTCollection
         Set astCollection = ##class(dc.openapi.common.SwaggerToASTConverter).ToASTCollection(documentCollection)
+        Set astCollection.GetByKey(##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY).PackageModel = "myapplication.models.common"
+        Set astCollection.GetByKey("../common/ssi_types.yaml").PackageModel = "myapplication.models.ssi"
+        Set astCollection.GetByKey("../common/error_response.yaml").PackageModel = "myapplication.models.err"
+        Do astCollection.ASTCollectionResolve()
         
-        Set variables(##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY) = "myapplication.models.common"
-        Set variables("../common/ssi_types.yaml") = "myapplication.models.ssi"
-        Set variables("../common/error_response.yaml") = "myapplication.models.err"
-       
-        Do ##class(dc.openapi.suite.services.Generator).ASTCollectionResolve(astCollection, .variables)
+        Do ##class(dc.openapi.common.Utils).DumpToFile(astCollection, "/home/irisowner/irisdev/debug/ast-collection.json", $$$YES)
        
         Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", astCollection.ASTs.GetAt(1))
         Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New(httpClientGenConfig)

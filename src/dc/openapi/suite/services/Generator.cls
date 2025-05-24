@@ -17,40 +17,20 @@ ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.Swag
     Return tSc
 }
 
-ClassMethod ASTCollectionResolve(ASTCollection As dc.openapi.common.ASTCollection, ByRef variables As %Binary) As %Status
+ClassMethod GenerateModels(ASTCollection As dc.openapi.common.ASTCollection) As %Status
 {
-    #dim astRef As dc.openapi.common.ASTReference
     Set tSc = $$$OK
+    Do ASTCollection.ASTCollectionResolve()
+    Set modelGenerator = ##class(dc.openapi.common.generator.ModelGenerator).%New()
+    #dim astRef As dc.openapi.common.ASTReference
     Set index = ""
     For  {
         Set astRef = ASTCollection.ASTs.GetNext(.index)
         Quit:index=""
-        Set astRef.AST = ##class(dc.openapi.suite.services.Generator).ASTRevolve(astRef.AST, .variables)
+        Set modelGenerator.ASTReference = astRef
+        Set tSc = $$$ADDSC(sc,modelGenerator.GenerateAll())
     }
     Return tSc
-}
-
-ClassMethod ASTRevolve(ASTInput As dc.openapi.common.ast.OAS, ByRef variables As %Binary) As dc.openapi.common.ast.OAS
-{
-    Set gcs = ##class(%Stream.GlobalCharacter).%New(), resolvedGCS = ##class(%Stream.GlobalCharacter).%New()
-    Do ASTInput.%JSONExportToStream(.gcs)
-
-    While 'gcs.AtEnd {
-        Set line = gcs.ReadLine()
-
-        Set key = ""
-        For  {
-            Set key = $Order(variables(key), 1, value)
-            Quit:key=""
-            Set line = $Replace(line, "{{" _ key _ "}}", value)
-        }
-        Do resolvedGCS.WriteLine(line)
-    }
-
-    Do resolvedGCS.Rewind()
-    Set outAST = ##class(dc.openapi.common.ast.OAS).%New()
-    Do outAST.%JSONImport(resolvedGCS)
-    Return outAST
 }
 
 }
