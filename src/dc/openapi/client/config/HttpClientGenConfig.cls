@@ -72,7 +72,7 @@ Method %OnNew(pPackage As %String, ASTReference As dc.openapi.common.ASTReferenc
 
 Method ASTGet() As dc.openapi.common.ast.OAS [ CodeMode = expression ]
 {
-..ASTReference.AST
+$Select($IsObject(..ASTReference):..ASTReference.AST,1:"")
 }
 
 }

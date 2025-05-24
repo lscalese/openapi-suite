@@ -41,10 +41,11 @@ ClassMethod ValidateDocumentCollection() As %DynamicObject
     Return response
 }
 
-ClassMethod GenerateAST() As %DynamicObject
+ClassMethod GenerateASTCollection() As %DynamicObject
 {
     #dim %request As %CSP.Request
     Set response = {}
+    Set tSc =$$$OK
     Try {
         Set preparer = ..GetPreparerForValidation(.code, .response)
         If code '= "" {
@@ -52,10 +53,10 @@ ClassMethod GenerateAST() As %DynamicObject
             Return response
         }
         Else {
+            Set response = ##class(%Stream.GlobalCharacter).%New()
             Set documentCollection = preparer.GetDocumentCollection()
-            Set validationResult =##class(dc.openapi.suite.services.Generator).DocumentCollectionToAST(documentCollection, .AST)
-            Do AST.%JSONExportToString(.responseStr)
-            Set response = responseStr
+            $$$TOE(tSc, ##class(dc.openapi.suite.services.Generator).DocumentCollectionToAST(documentCollection, .ASTCollection))
+            $$$TOE(tSc,ASTCollection.%JSONExportToStream(.response))
         }
     }
     Catch ex {

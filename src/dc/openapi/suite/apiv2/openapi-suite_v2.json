@@ -84,11 +84,11 @@
         }
       }
     },
-    "/generate-ast": {
+    "/generate-ast-collection": {
       "post": {
         "summary": "Generate AST from document collection",
         "description": "Converts a collection of documents into an Abstract Syntax Tree (AST) representation",
-        "operationId": "generateAST",
+        "operationId": "generateASTCollection",
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -104,7 +104,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ASTResponse"
+                  "$ref": "#/components/schemas/ASTCollection"
                 }
               }
             }
@@ -333,6 +333,17 @@
               "$ref": "#/components/schemas/ASTModelProperty"
             },
             "description": "Model properties"
+          }
+        }
+      },
+      "ASTCollection": {
+        "type": "object",
+        "properties": {
+          "ASTs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ASTResponse"
+            }
           }
         }
       },

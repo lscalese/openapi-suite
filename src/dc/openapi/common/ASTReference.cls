@@ -1,4 +1,4 @@
-Class dc.openapi.common.ASTReference Extends %RegisteredObject
+Class dc.openapi.common.ASTReference Extends (%JSON.Adaptor, %RegisteredObject)
 {
 
 Property Key As %String;

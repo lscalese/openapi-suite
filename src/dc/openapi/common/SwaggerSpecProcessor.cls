@@ -20,8 +20,6 @@ Class dc.openapi.common.SwaggerSpecProcessor Extends %RegisteredObject
 
 Property DocumentCollection As dc.openapi.common.SwaggerDocumentCollection;
 
-Property Errors As %DynamicObject [ InitialExpression = {{}} ];
-
 Property ExpectedExternalSwagger As list Of %String;
 
 Property ValidationResult As dc.openapi.common.ValidationResult [ InitialExpression = {##class(dc.openapi.common.ValidationResult).%New()} ];
@@ -107,7 +105,6 @@ Method PreProcess() As %Status
     Catch ex {
         Set tSc = ex.AsStatus()
         $$$LOGERROR("Error during preprocessing: "_$SYSTEM.Status.GetErrorText(tSc))
-        Do ##class(%JSON.Formatter).%New().FormatToString(..Errors, .jsonErrors)
         $$$LOGERROR("SwaggerSpecProcessor Errors: "_ $$$NL _ jsonErrors)
         Return tSc
     }
@@ -138,8 +135,6 @@ Method Validate() As %Boolean
             Set isDefined = ..ReferenceIsDefined(document, ref)
             If 'isDefined {
                 $$$LOGERROR("Undefined reference in document: "_ref)
-                Set:'..Errors.%IsDefined("UndefinedReferences") ..Errors.UndefinedReferences = []
-                Do ..Errors.UndefinedReferences.%Push({"document": (key), "reference": (ref)})
                 Do ..ValidationResult.UndefinedReferences.Insert("Undefined Reference in document "_key _" : "_ref)
                 Set:isValid isValid = $$$NO
             }
@@ -151,7 +146,6 @@ Method Validate() As %Boolean
     }
 
     ; Check if expected external document are defined
-    Set ..Errors.MissingExternalSwagger = []
     Set key = ""
     For  {
         Set key = $Order(uniqueExternal(key))
@@ -159,7 +153,6 @@ Method Validate() As %Boolean
 
         If '..DocumentCollection.ItemExists(key) {
             $$$LOGERROR("Missing external document: "_key)
-            Do ..Errors.MissingExternalSwagger.%Push(key)
             Do ..ValidationResult.MissingExternalDocuments.Insert(key)
             Set:isValid isValid = $$$NO
         }

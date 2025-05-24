@@ -9,7 +9,7 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/ping" Method="GET" Call="Ping" />
     <Route Url="/_spec" Method="GET" Call="SwaggerSpec" />
     <Route Url="/validate-document-collection" Method="POST" Call="ValidateDocumentCollection" />
-    <Route Url="/generate-ast" Method="POST" Call="GenerateAST" />
+    <Route Url="/generate-ast-collection" Method="POST" Call="GenerateASTCollection" />
 </Routes>
 }
 
@@ -53,13 +53,13 @@ ClassMethod ValidateDocumentCollection() As %Status
     Quit sc
 }
 
-ClassMethod GenerateAST() As %Status
+ClassMethod GenerateASTCollection() As %Status
 {
     Set sc = $$$OK
     Try {
         #dim %request As %CSP.Request
         Do ##class(%REST.Impl).%SetContentType("application/json")
-        Set response = ##class(dc.openapi.suite.apiv2.Implementation).GenerateAST()
+        Set response = ##class(dc.openapi.suite.apiv2.Implementation).GenerateASTCollection()
         Do ##class(dc.openapi.suite.apiv2.Implementation).%WriteResponse(response)
     } Catch(ex) {
         Do ##class(%REST.Impl).%ReportRESTError(..#HTTP500INTERNALSERVERERROR,ex.AsStatus(),$parameter("dc.openapi.suite.api.impl","ExposeServerExceptions"))

@@ -8,15 +8,15 @@ Property DocumentCollection As dc.openapi.common.SwaggerDocumentCollection [ Ini
 
 Property CurrentDocumentReference As dc.openapi.common.SwaggerDocumentReference;
 
-Property AST As dc.openapi.common.ast.OAS [ InitialExpression = {##class(dc.openapi.common.ast.OAS).%New()}, Private ];
+Property ASTCollection As dc.openapi.common.ASTCollection [ InitialExpression = {##class(dc.openapi.common.ASTCollection).%New()} ];
 
-/// not implemented yet
-Property UseAI As %Boolean [ InitialExpression = 0 ];
+Property AST As dc.openapi.common.ast.OAS [ InitialExpression = {##class(dc.openapi.common.ast.OAS).%New()}, Private ];
 
 /// Internal use (it's just a shortcut to ..CurrentDocumentReference.Document)
 Property OAS As %DynamicObject [ Calculated, Private ];
 
-Property ASTCollection As dc.openapi.common.ASTCollection [ InitialExpression = {##class(dc.openapi.common.ASTCollection).%New()} ];
+/// not implemented yet
+Property UseAI As %Boolean [ InitialExpression = 0 ];
 
 Method %OnNew(DocumentCollection As dc.openapi.common.SwaggerDocumentCollection) As %Status
 {
@@ -61,6 +61,8 @@ Method Transform() As %Status
 
     $$$LOGINFO("Starting SwaggerToASTConverter...")
     
+    Set ..AST = ##class(dc.openapi.common.ast.OAS).%New()
+
     Do ..Info()
     Do ..Servers()
     Do ..Paths()

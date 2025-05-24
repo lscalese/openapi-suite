@@ -10,9 +10,10 @@ ClassMethod DocumentCollectionValidation(documentCollection As dc.openapi.common
 
 ClassMethod DocumentCollectionToAST(documentCollection As dc.openapi.common.SwaggerDocumentCollection, Output ASTCollection As dc.openapi.common.ASTCollection) As %Status
 {
-    Set transformer = ##class(dc.openapi.common.SwaggerToASTConverter).%New(documentCollection)
-    Set tSc = transformer.TransformAll()
-    Set ASTCollection = transformer.ASTCollection
+    Set tSc = $$$OK
+    Set preProcessor = ##class(dc.openapi.common.SwaggerSpecProcessor).%New(documentCollection)
+    $$$TOE(tSc,preProcessor.PreProcess())
+    Set ASTCollection = ##class(dc.openapi.common.SwaggerToASTConverter).ToASTCollection(preProcessor.DocumentCollection, tSc)
     Return tSc
 }
 
