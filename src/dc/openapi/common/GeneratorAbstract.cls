@@ -1,3 +1,5 @@
+Include dc.openapi.common.macro
+
 Class dc.openapi.common.GeneratorAbstract Extends %RegisteredObject
 {
 
@@ -43,12 +45,41 @@ Method DeleteIfExists() As %Status
 {
     Return:'##class(%Dictionary.ClassDefinition).%ExistsId(..ClassName) $$$OK
     ; todo add security check to avoid deleting system classes
+    $$$LOGDEBUG("Deleting existing class definition for "_..ClassName)
     Return $SYSTEM.OBJ.Delete(..ClassName)
 }
 
 Method ASTGet() As dc.openapi.common.ast.OAS [ CodeMode = expression ]
 {
 ..ASTReference.AST
+}
+
+/// Check if the parameter OverrideClassIfExists is set.
+/// If it is set, the method will check if the class definition already exists.
+/// If it exists, it will delete the existing class definition.
+/// If the parameter OverrideClassIfExists is not set, it will check if the class definition already exists.
+/// If it exists, it will return the existing class definition.
+/// 
+/// The method returns $$$NO if the class definition already exists and OverrideClassIfExists is not set.
+/// In this case, the output parameter classDefinition will contain the existing class definition.
+Method HandleOverride(Output classDefinition As %Dictionary.ClassDefinition = "") As %Boolean
+{
+    If ..OverrideClassIfExists {
+        If ##class(%Dictionary.CompiledClass).%ExistsId(..ClassName) {
+            $$$LOGDEBUG("Class definition for "_..ClassName_" already exists and OverrideClassIfExists is set. Deleting it.")
+            Set sc = ..DeleteIfExists()
+            If $$$ISERR(sc) {
+                $$$LOGERROR("Failed to delete existing class definition for "_..ClassName_": "_$System.Status.GetErrorText(sc))
+            }
+        }
+    }
+    ElseIf ##class(%Dictionary.ClassDefinition).%ExistsId(..ClassName) {
+        $$$LOGDEBUG("Class definition for "_..ClassName_" already exists and OverrideClassIfExists is not set. Skipping generation.")
+        Set classDefinition = ##class(%Dictionary.ClassDefinition).%OpenId(..ClassName)
+        Return $$$NO
+    }
+    
+    Return $$$YES
 }
 
 }

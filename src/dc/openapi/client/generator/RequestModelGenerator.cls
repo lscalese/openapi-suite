@@ -39,11 +39,10 @@ ClassMethod GenerateByPath(path As dc.openapi.common.ast.Path, packageName As %S
 
 Method Generate(path As dc.openapi.common.ast.Path) As %Dictionary.ClassDefinition
 {
-    If ..OverrideClassIfExists {
-        Do ..DeleteIfExists()
-    }
+    Return:'..HandleOverride(.classDef) classDef
     
     Set className = ..ClassName
+    Do ##class(dc.openapi.common.GeneratedItemRegistry).RegisterClass(..ClassName)
 
     Set requestClassModel = ##class(%Dictionary.ClassDefinition).%New()
     Set requestClassModel.ProcedureBlock = $$$YES

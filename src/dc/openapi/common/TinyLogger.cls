@@ -24,7 +24,7 @@ ClassMethod StartSession(config As %DynamicObject = {{}})
     Set session = ..GetInstance()
     Set session.SessionStarted = $$$YES
     Set session.Verbose = ''config.verbose
-    Set:config.%IsDefined(("level")) session.Level = config.level
+    Set:config.%IsDefined("level") session.Level = config.level
 }
 
 ClassMethod StopSession()

@@ -17,22 +17,6 @@ Property ToMove As %DynamicObject;
 
 Property HashComponentsSchemas As %String [ MultiDimensional ];
 
-ClassMethod test()
-{
-    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/components_schemas_allOf1.json")
-    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/flattened_example.json")
-    Set oas = {}.%FromJSONFile("/home/irisowner/irisdev/temp-dev-specs/f1.json")
-    
-    
-    Set documentCollection = ##class(dc.openapi.common.SwaggerDocumentCollection).%New()
-    Do documentCollection.AddItem(oas, ##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY)
-
-    Set flattener = ##class(dc.openapi.common.Flattener).%New()
-    Set flattener.DocumentCollection = documentCollection
-    Do flattener.Lift()
-    Do ##class(%JSON.Formatter).%New().Format(oas)
-}
-
 Method Lift() As %Status
 {
     #dim item As dc.openapi.common.SwaggerDocumentReference

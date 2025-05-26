@@ -1,3 +1,5 @@
+Include dc.openapi.common.macro
+
 Class dc.openapi.suite.apiv2.Implementation Extends %REST.Impl [ ProcedureBlock ]
 {
 
@@ -22,22 +24,24 @@ ClassMethod ValidateDocumentCollection() As %DynamicObject
     #dim %request As %CSP.Request
     Set response = {}
     Try {
-        Set preparer = ..GetPreparerForValidation(.code, .response)
+        Set logLevel = $Get(%request.Data("logs",1))
+        Do:logLevel'="" ##class(dc.openapi.common.TinyLogger).StartSession({"level":($$$LOGLEVEL(logLevel))})
+        Set preparer = ..GetPreparer(.code, .response)
         If code '= "" {
             Set %response.Status = code
-            Return response
         }
         Else {
             Set documentCollection = preparer.GetDocumentCollection()
             Set validationResult =##class(dc.openapi.suite.services.Generator).DocumentCollectionValidation(documentCollection)
             Do validationResult.%JSONExportToString(.responseStr)
-            Set response = responseStr
+            Set response = {}.%FromJSON(responseStr)
         }
     }
     Catch ex {
         Set response.error = "Error processing request: "_ex.AsStatus()
         Set %response.Status = ##class(%CSP.REST).#HTTP500INTERNALSERVERERROR
     }
+    Do ..AddLogsToResponse(.response)
     Return response
 }
 
@@ -47,26 +51,56 @@ ClassMethod GenerateASTCollection() As %DynamicObject
     Set response = {}
     Set tSc =$$$OK
     Try {
-        Set preparer = ..GetPreparerForValidation(.code, .response)
+        Set logLevel = $Get(%request.Data("logs",1))
+        Do:logLevel'="" ##class(dc.openapi.common.TinyLogger).StartSession({"level":($$$LOGLEVEL(logLevel))})
+        Set preparer = ..GetPreparer(.code, .response)
         If code '= "" {
             Set %response.Status = code
-            Return response
         }
         Else {
-            Set response = ##class(%Stream.GlobalCharacter).%New()
+            Set responseGCS = ##class(%Stream.GlobalCharacter).%New()
             Set documentCollection = preparer.GetDocumentCollection()
             $$$TOE(tSc, ##class(dc.openapi.suite.services.Generator).DocumentCollectionToAST(documentCollection, .ASTCollection))
-            $$$TOE(tSc,ASTCollection.%JSONExportToStream(.response))
+            $$$TOE(tSc,ASTCollection.%JSONExportToStream(.responseGCS))
+            Set response = {}.%FromJSON(responseGCS)
         }
     }
     Catch ex {
         Set response.error = "Error processing request: "_ex.AsStatus()
         Set %response.Status = ##class(%CSP.REST).#HTTP500INTERNALSERVERERROR
     }
+    Do ..AddLogsToResponse(.response)
     Return response
 }
 
-ClassMethod GetPreparerForValidation(Output code As %String = "", Output response As %DynamicObject) As dc.openapi.common.SwaggerDocumentPreparer
+ClassMethod GenerateModels() As %DynamicObject
+{
+    #dim %request As %CSP.Request
+    Set response = {}
+    Set tSc =$$$OK
+    Set namespaceOrigin = $Namespace New $Namespace
+    Try {
+        Set mode = $Get(%request.Data("mode",1), "download")
+        Do:$Data(%request.Data("logs",1),logLevel) ##class(dc.openapi.common.TinyLogger).StartSession({"level":($$$LOGLEVEL(logLevel))})
+        Set ASTCollection = ##class(dc.openapi.common.ASTCollection).%New()
+        $$$TOE(tSc,ASTCollection.%JSONImport(%request.Content))
+        TSTART:mode="download"
+        Set:$Data(%request.Data("namespace",1),namespace)&&(namespace'="") $Namespace = namespace
+        $$$TOE(tSc,##class(dc.openapi.suite.services.Generator).GenerateModels(ASTCollection))
+        Set generationResult = ##class(dc.openapi.suite.services.Generator).GetGenerationResult()
+        Set response = ##class(%Stream.GlobalCharacter).%New()
+        $$$TOE(tSc,generationResult.%JSONExportToStream(.response))
+    }
+    Catch ex {
+        Set response.error = "Error processing request: "_ex.AsStatus()
+        Set %response.Status = ##class(%CSP.REST).#HTTP500INTERNALSERVERERROR
+    }
+    TROLLBACK:$TLEVEL
+    Set:$Namespace'=namespaceOrigin $Namespace = namespaceOrigin
+    Return response
+}
+
+ClassMethod GetPreparer(Output code As %String = "", Output response As %DynamicObject) As dc.openapi.common.SwaggerDocumentPreparer
 {
     #dim %response As %CSP.Response
     Set preparer = ##class(dc.openapi.common.SwaggerDocumentPreparer).%New()
@@ -104,59 +138,18 @@ ClassMethod GetPreparerForValidation(Output code As %String = "", Output respons
     Return preparer
 }
 
-/// complex and common code to create a SwaggerDocumentPreparer object
-/// from %request.
-ClassMethod GetPreparer(Output code As %String = "", Output response As %DynamicObject) As dc.openapi.common.SwaggerDocumentPreparer
+ClassMethod AddLogsToResponse(response As %DynamicObject) [ Private ]
 {
-    #dim %response As %CSP.Response
-    Set preparer = ##class(dc.openapi.common.SwaggerDocumentPreparer).%New()
-
-    Set response = {}
-    
-    Set documentKeys = $Get(%request.Data("documentKeys", 1))
-    Set documentSettings = {}.%FromJSON("[" _ $g(%request.Data("documentSettings",1)) _ "]")
-    
-    Set iterator = documentSettings.%GetIterator()
-    While iterator.%GetNext(.key, .value) {
-        Set arrayDocumentSettings(value.key) = value
-    }
-    
-    Set index = "", documentCount = 0
+    Set:'response.%IsDefined("logs") response.logs = []
+    #dim logInstance As dc.openapi.common.TinyLogger
+    Set logInstance = ##class(dc.openapi.common.TinyLogger).GetInstance()
+    Set key = ""
     For  {
-        Set index = $Order(%request.MimeData("documents", index), 1, currentDocument)
-        Quit:index=""
-        Do $Increment(documentCount)
-
-        Set documentKey = $Piece(documentKeys, ",", index)
-
-        If documentKey = "" {
-            Set response.error = "Document key not found for document "_index
-            Set code = ##class(%CSP.REST).#HTTP400BADREQUEST
-            Quit
-        }
-
-        Set settings = $Get(arrayDocumentSettings(documentKey))
-        If '$IsObject(settings) || (settings.modelPackage = ""){
-            Set response.error = "DocumentSettings not found for document key "_documentKey_" (modelPackage is mandatory) "
-            Set code = ##class(%CSP.REST).#HTTP400BADREQUEST
-            Quit
-        }
-
-        If documentKey = ##class(dc.openapi.common.SwaggerDocumentCollection).#MAINKEY {
-            $$$TOE(sc, preparer.SetMainDocument(currentDocument, settings) )
-        }
-        Else {
-            $$$TOE(sc, preparer.AddDocument(currentDocument, documentKey, settings) )
-        }
+        Set log = logInstance.Logs.GetNext(.key)
+        Quit:key=""
+        Do response.logs.%Push(log)
     }
-
-    If documentCount = 0 {
-        Set response.error = "No documents found in the request"
-        Set code = ##class(%CSP.REST).#HTTP400BADREQUEST
-    }
-    
-
-    Return preparer
+    Return
 }
 
 }

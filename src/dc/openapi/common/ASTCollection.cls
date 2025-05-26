@@ -52,7 +52,7 @@ Method ASTCollectionResolve() As %Status
     For  {
         Set astRef = ..ASTs.GetNext(.index)
         Quit:index=""
-        Set astRef.AST = ##class(dc.openapi.suite.services.Generator).ASTRevolve(astRef.AST, .variables)
+        Set astRef.AST = ..ASTRevolve(astRef.AST, .variables)
     }
 
     Return tSc

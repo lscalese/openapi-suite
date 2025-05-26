@@ -388,4 +388,16 @@ ClassMethod DumpToFile(object As %RegisteredObject, fileName As %String, deleteI
     Return sc
 }
 
+ClassMethod ConvertStreamToBase64(input As %Stream.GlobalCharacter) As %Stream.GlobalCharacter
+{
+    Do input.Rewind()
+    Set len = 8190 * 3
+    Set insertLineBreak = $$$NO
+    Set output = ##class(%Stream.GlobalCharacter).%New()
+    While 'input.AtEnd {
+        Do output.Write($System.Encryption.Base64Encode(input.Read(len), 'insertLineBreak))
+    }
+    Return output
+}
+
 }

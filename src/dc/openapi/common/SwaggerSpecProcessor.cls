@@ -38,7 +38,7 @@ Method PreProcess() As %Status
         Set isValid = ..Validate()
 
         If 'isValid {
-            $$$ThrowStatus($$$ERROR($$$GeneralError, "Validation failed, check the Errors property"))
+            $$$ThrowStatus($$$ERROR($$$GeneralError, "Validation failed, check logs for details."))
         }
         
         ; Resolve external documents that are not full specifications

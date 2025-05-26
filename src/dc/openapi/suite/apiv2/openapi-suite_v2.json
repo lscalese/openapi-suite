@@ -41,6 +41,11 @@
         "summary": "Validate a collection of documents",
         "description": "Allows uploading multiple files with associated keys for linking to modelPackages",
         "operationId": "validateDocumentCollection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/logs"
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -62,24 +67,10 @@
             }
           },
           "400": {
-            "description": "Invalid request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SimpleErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/BadRequest"
           },
           "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SimpleErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -89,6 +80,11 @@
         "summary": "Generate AST from document collection",
         "description": "Converts a collection of documents into an Abstract Syntax Tree (AST) representation",
         "operationId": "generateASTCollection",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/logs"
+          }
+        ],
         "requestBody": {
           "content": {
             "multipart/form-data": {
@@ -110,24 +106,55 @@
             }
           },
           "400": {
-            "description": "Invalid request",
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/generate-models": {
+      "post": {
+        "summary": "Generate models from AST collection",
+        "description": "Generates models based on the provided AST collection and settings",
+        "operationId": "generateModels",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/logs"
+          },
+          {
+            "$ref": "#/components/parameters/namespace"
+          },
+          {
+            "$ref": "#/components/parameters/GenerationMode"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ASTCollection"
+              }
+            }
+          }
+        },
+        "responses":{
+          "200": {
+            "description": "Models successfully generated",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SimpleErrorResponse"
+                  "$ref": "#/components/schemas/GenerationResult"
                 }
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "500": {
-            "description": "Server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SimpleErrorResponse"
-                }
-              }
-            }
+            "$ref": "#/components/responses/ServerError"
           }
         }
       }
@@ -179,6 +206,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -226,6 +259,30 @@
           }
         }
       },
+      "GenerationResult": {
+        "type": "object",
+        "properties": {
+          "generatedItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "List of generated class names"
+            }
+          },
+          "generatedCode": {
+            "type": "string",
+            "format": "base64",
+            "description": "Generated code exported in XML format and encoded in base64"
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "description": "Logs from the generation process"
+            }
+          }
+        }
+      },
       "SimpleErrorResponse": {
         "type": "object",
         "properties": {
@@ -233,6 +290,13 @@
             "type": "string",
             "description": "Error message",
             "example": "An error occurred while processing your request"
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Detailed logs for debugging"
           }
         }
       },
@@ -515,6 +579,74 @@
               "$ref": "#/components/schemas/ASTParameter"
             },
             "description": "Path parameters"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "logs": {
+        "name": "logs",
+        "in": "query",
+        "description": "Enable detailed logging for validation process, can be empty or use the loggin level (trace, debug, info, warning, error, fatal)",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "default": "",
+          "enum": [
+            "",
+            "trace",
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "fatal"
+          ]
+        }
+      },
+      "namespace":{
+        "name": "namespace",
+        "in": "query",
+        "description": "Namespace for the generated models",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "default": "USER"
+        }
+      },
+      "GenerationMode":{
+        "name" : "mode",
+        "in": "query",
+        "required": true,
+        "description": "Generation mode, 'local' generate the code on the server for the given namespace, 'download' generate the code for download purpose, the generated code won't stored on the server",
+        "schema": {
+          "type": "string",
+          "default": "local",
+          "enum": [
+            "local",
+            "download"
+          ]
+        }
+        
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SimpleErrorResponse"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SimpleErrorResponse"
+            }
           }
         }
       }

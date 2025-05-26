@@ -7,15 +7,15 @@ Parameter NAME = "HttpClient";
 
 Method Generate() As %Dictionary.ClassDefinition
 {
-    If ..OverrideClassIfExists {
-        Do ..DeleteIfExists()
-    }
+    Return:'..HandleOverride(.classDef) classDef
     
     Set httpClientClass = ##class(%Dictionary.ClassDefinition).%New()
     Set httpClientClass.ProcedureBlock = $$$YES
     Set httpClientClass.Inheritance = "left"
     Set httpClientClass.Super = "%RegisteredObject"
     Set httpClientClass.Name = ..ClassName
+    Do ##class(dc.openapi.common.GeneratedItemRegistry).RegisterClass(..ClassName)
+    
 
     Set httpClientClass.Description = "HTTP Client for: " _ ..AST.Info.Title_$c(13) 
         _ "/// Version: " _ ..AST.Info.Version_$c(13) 

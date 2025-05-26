@@ -7,7 +7,7 @@ Property AST As dc.openapi.common.ast.OAS;
 
 Property PackageModel As %String;
 
-Method %OnNew(Key As %String, AST As dc.openapi.common.ast.OAS) As %Status
+Method %OnNew(Key As %String = "", AST As dc.openapi.common.ast.OAS = "") As %Status
 {
     Set ..Key = Key
     Set ..AST = AST

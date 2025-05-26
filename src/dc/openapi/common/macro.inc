@@ -29,3 +29,5 @@ ROUTINE dc.openapi.common.macro [Type=INC]
 #define LOGDEBUGENABLED                     (##class(dc.openapi.common.TinyLogger).GetInstance().Level>=$$$LEVELDEBUG)
 
 #define LOGSTATUS(%log,%status)             If $$$ISERR(%status) { $$$LOGERROR(%log) } Else { $$$LOGINFO(%log) }
+
+#define LOGLEVEL(%str)                      $Case($$$UPPER(%str), "FATAL": $$$LEVELFATAL, "ERROR": $$$LEVELERROR, "WARNING": $$$LEVELWARNING, "INFO": $$$LEVELINFO, "DEBUG": $$$LEVELDEBUG, "TRACE": $$$LEVELTRACE, 1: "")

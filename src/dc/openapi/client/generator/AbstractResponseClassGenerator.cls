@@ -13,11 +13,10 @@ Method GenerateAll() As %Status
 
 Method Generate() As %Dictionary.ClassDefinition
 {
-    If ..OverrideClassIfExists {
-        Do ..DeleteIfExists()
-    }
+    Return:'..HandleOverride(.classDef) classDef
 
     Set className = ..ClassName
+    Do ##class(dc.openapi.common.GeneratedItemRegistry).RegisterClass(..ClassName)
     Set abstractResponseClass = ##class(%Dictionary.ClassDefinition).%New()
     Set abstractResponseClass.ProcedureBlock = $$$YES
     Set abstractResponseClass.Inheritance = "left"
