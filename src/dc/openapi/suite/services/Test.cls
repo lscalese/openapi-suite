@@ -55,24 +55,17 @@ ClassMethod Test() As %Status
         
         Do ##class(dc.openapi.common.Utils).DumpToFile(astCollection, "/home/irisowner/irisdev/debug/ast-collection.json", $$$YES)
        
-        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", astCollection.ASTs.GetAt(1))
-        
+        Set httpClientGenConfig = ##class(dc.openapi.client.config.HttpClientGenConfig).%New("myapplication.httpclient", astCollection.ASTs.GetAt(1))        
         Set httpClientGenerator = ##class(dc.openapi.client.HttpClientGeneratorV2).%New(httpClientGenConfig)
         Set tsc = httpClientGenerator.Generate()
         If $$$ISERR(tsc) {
             $$$ThrowStatus(tsc)
         }
-        s httpClientGenConfig.ASTReference = ""
-        s str=httpClientGenConfig.ToJSONWithArraysAsKeyValue()
-        
-        zw str
-        ;w !,##class(%JSON.Formatter).%New().Format(str),!
+       
     } Catch ex {
         Set tSc = ex.AsStatus()
         Do $SYSTEM.Status.DisplayError(tSc)
     }
-
-    ;Zw ##class(dc.openapi.common.GeneratedItemRegistry).GetInstance().GeneratedClasses.Serialize()
 
     Do ##class(dc.openapi.common.TinyLogger).StopSession()
     Return tSc
