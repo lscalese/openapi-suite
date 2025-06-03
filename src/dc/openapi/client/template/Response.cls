@@ -92,7 +92,7 @@ XData JSONList [ MimeType = plain/text ]
             While iterator.%GetNext(.key, .value) {
                 Set currentObject = ##class({{ModelProperty.Type}}).%New()
                 Do currentObject.%JSONImport(value)
-                Do ..{{ModelProperty.Name}}.%Insert(currentObject)
+                Do ..{{ModelProperty.Name}}.Insert(currentObject)
             }
             Kill iterator, key, value, currentObject, array
         }
@@ -116,10 +116,10 @@ XData CommonProperties [ MimeType = plain/text ]
     For {
         Set headerName = $Order(httpResponse.Headers(headerName), 1, headerValue)
         Quit:headerName=""
-        Do ..%Headers.Set(headerValue, headerName)
+        Do ..%Headers.SetAt(headerValue, headerName)
     }
 
-    If '$IsObject(..HttpResponse.Data) { 
+    If '$IsObject(httpResponse.Data) { 
         Do ..%Data.Write(httpResponse.Data)
     }
     Else {

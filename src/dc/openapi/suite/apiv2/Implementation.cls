@@ -45,6 +45,13 @@ ClassMethod ValidateDocumentCollection() As %DynamicObject
     Return response
 }
 
+ClassMethod GetHttpClientGenConfig(Package As %String, ASTReference As dc.openapi.common.ASTReference) As dc.openapi.client.config.HttpClientGenConfig
+{
+    Set clientConfig = ##class(dc.openapi.suite.services.Generator).GetHttpClientGenConfig(Package, ASTReference)
+    Set response = clientConfig.ToJSONWithArraysAsKeyValue()
+    Return response
+}
+
 ClassMethod GenerateASTCollection() As %DynamicObject
 {
     #dim %request As %CSP.Request

@@ -85,7 +85,7 @@ Method Generate(path As dc.openapi.common.ast.Path) As %Dictionary.ClassDefiniti
         Set parameter = path.Parameters.GetNext(.key)
         Quit:key=""
 
-        Set propertyDef = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(parameter.ModelProperty)
+        Set propertyDef = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(parameter.ModelProperty, $$$NO)
         Do requestClassModel.Properties.Insert(propertyDef)
     }
 
@@ -94,7 +94,7 @@ Method Generate(path As dc.openapi.common.ast.Path) As %Dictionary.ClassDefiniti
         Set requestBody = path.RequestBodies.GetNext(.key)
         Quit:key=""
 
-        Set requestBodyPropDef = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(requestBody.ModelProperty)
+        Set requestBodyPropDef = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(requestBody.ModelProperty, $$$NO)
         If '$Data(createdRequestBody(" "_requestBodyPropDef.Type)) { ; avoid duplicate request body objects if it's the same type
             Set createdRequestBody(" "_requestBodyPropDef.Type) = requestBodyPropDef
             Do requestClassModel.Properties.Insert(requestBodyPropDef) 

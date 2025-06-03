@@ -10,8 +10,7 @@ XData DatatypeSimple [ MimeType = plain/text ]
 XData ArraySimple [ MimeType = plain/text ]
 {
     // X-MyHeader: 3,4,5
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Do {{HttpRequestObject}}.SetHeader("{{Name}}", $ListToString(tmpList))
     Kill tmpList
 }

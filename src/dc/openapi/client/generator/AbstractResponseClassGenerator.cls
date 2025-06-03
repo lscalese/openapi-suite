@@ -20,7 +20,7 @@ Method Generate() As %Dictionary.ClassDefinition
     Set abstractResponseClass = ##class(%Dictionary.ClassDefinition).%New()
     Set abstractResponseClass.ProcedureBlock = $$$YES
     Set abstractResponseClass.Inheritance = "left"
-    Set abstractResponseClass.Super = "%RegisteredObject"
+    Set abstractResponseClass.Super = "%RegisteredObject,%JSON.Adaptor"
     Set abstractResponseClass.Name = className
 
     Set contentBoundary = ##class(%Dictionary.PropertyDefinition).%New()

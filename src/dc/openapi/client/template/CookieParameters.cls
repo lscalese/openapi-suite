@@ -8,8 +8,7 @@ XData DatatypeSimple [ MimeType = plain/text ]
 
 XData ArraySimple [ MimeType = plain/text ]
 {
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList), valueParameter = $ListToString(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize(), valueParameter = $ListToString(tmpList)
     Do {{HttpRequestObject}}.InsertCookie("{{Name}}", valueParameter, "/", {{HttpRequestObject}}.Server, "", 0)
     Kill tmpList, valueParameter
 }

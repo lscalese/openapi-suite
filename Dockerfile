@@ -19,11 +19,11 @@ ARG MODULE="openapi-suite"
 ARG NAMESPACE="IRISAPP"
 
 ## Embedded Python environment
-ENV IRISUSERNAME "_SYSTEM"
-ENV IRISPASSWORD "SYS"
-ENV IRISNAMESPACE $NAMESPACE
+ENV IRISUSERNAME="_SYSTEM"
+ENV IRISPASSWORD="SYS"
+ENV IRISNAMESPACE=$NAMESPACE
 ENV PYTHON_PATH=/usr/irissys/bin/
-ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
+ENV PATH=/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin
 
 
 RUN --mount=type=bind,src=.,dst=. \

@@ -89,7 +89,7 @@ Method Generate(model As dc.openapi.common.ast.Model) As %Dictionary.ClassDefini
     Return classDef
 }
 
-ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelProperty) As %Dictionary.PropertyDefinition
+ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelProperty, isINJSONAdaptorClass As %Boolean = {$$$YES}) As %Dictionary.PropertyDefinition
 {
     If $$$LOGTRACEENABLED {
         $$$LOGTRACE("Creating property definition for "_property.Name)
@@ -106,7 +106,8 @@ ClassMethod GetPropertyDefinition(property As dc.openapi.common.ast.ModelPropert
     Do:property.pMinimum'="" propDef.Parameters.SetAt(property.pMinimum,"MINVAL")        
     Do:property.pMaximum'="" propDef.Parameters.SetAt(property.pMaximum,"MAXVAL")        
     Do:property.pDefault'="" propDef.Parameters.SetAt(property.pDefault,"INITIALEXPRESSION")        
-    Do:property.pEnum'="" propDef.Parameters.SetAt(property.pEnum,"VALUELIST")        
+    Do:property.pEnum'="" propDef.Parameters.SetAt(property.pEnum,"VALUELIST")
+    Do:isINJSONAdaptorClass&&(property.pJSONFieldName'="") propDef.Parameters.SetAt(property.pJSONFieldName,"%JSONFIELDNAME")
 
     Return propDef
 }

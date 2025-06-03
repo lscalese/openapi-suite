@@ -12,7 +12,7 @@ XData OperationMethod [ MimeType = plain/text ]
     Try {
         Set {{responseModel}} = ##class({{responseObject}}).%New()
         $$$TOE(sc, {{requestModel}}.%BuildRequest(..HttpRequest))
-        $$$TOE(sc, ..HttpRequest.Send("{{Verb}}", ..BasePath _ {{requestModel}}.%Path))
+        $$$TOE(sc, ..HttpRequest.Send($zcvt("{{Verb}}","U"), ..BasePath _ {{requestModel}}.%Path))
         $$$TOE(sc, {{responseModel}}.%FromHttpResponse(..HttpRequest.HttpResponse))
     }
     Catch ex {

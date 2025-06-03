@@ -179,4 +179,30 @@ ClassMethod YamlToJSON(yamlContent) As %String [ Language = python ]
     return str(YamlToJSON(str(yamlContent)))
 }
 
+ClassMethod PrepareFiles(Output tSc As %Status, args...) As dc.openapi.common.SwaggerDocumentCollection
+{
+    Set tSc = $$$OK
+    Set preparer = ..%New()
+    Set index = "", count = 0, fileKey = ""
+    For  {
+        Set index = $Order(args(index), 1, value)
+        Quit:index=""
+        Set count = count + 1
+
+        If count # 2 = 1 {
+            Set fileKey = value
+            Continue
+        }
+
+        Set filePath = value
+        
+        Set file = ##class(%Stream.FileCharacter).%New()
+        Do file.LinkToFile(filePath)
+        Set gcs = ##class(%Stream.GlobalCharacter).%New()
+        Do gcs.CopyFrom(file)
+        Set tSc = $$$ADDSC(tSc,preparer.AddDocument(gcs,fileKey))
+    }
+    Return preparer.GetDocumentCollection()
+}
+
 }

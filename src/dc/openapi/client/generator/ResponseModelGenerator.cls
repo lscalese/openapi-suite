@@ -65,7 +65,7 @@ Method Generate(path As dc.openapi.common.ast.Path) As %Dictionary.ClassDefiniti
             Continue
         }
 
-        Set propertyDefinition = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(response.ModelProperty)
+        Set propertyDefinition = ##class(dc.openapi.common.generator.ModelGenerator).GetPropertyDefinition(response.ModelProperty,$$$NO)
         If '$Data(createdResponseContent(" "_propertyDefinition.Type)) { ; avoid duplicate the property with the same type
             Set createdResponseContent(" "_propertyDefinition.Type) = ""
             Do responseClassModel.Properties.Insert(propertyDefinition)

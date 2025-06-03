@@ -62,7 +62,7 @@ XData JSONString [ MimeType = text/plain ]
 XData JSONList [ MimeType = text/plain ]
 {
     If ..%ContentType = "{{ContentType}}" {
-        Do {{HttpRequestObject}}.EntityBody.Write("["")
+        Do {{HttpRequestObject}}.EntityBody.Write("[")
         Set key = "", addComma = 0
         For  {
             Set currentObject = ..{{ModelProperty.Name}}.GetNext(.key)

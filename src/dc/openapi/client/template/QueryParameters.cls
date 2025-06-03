@@ -10,19 +10,17 @@ XData DatatypeForm [ MimeType = plain/text ]
 XData ArrayFormExplode [ MimeType = plain/text ]
 {
     // Serialize the parameter list{{{Name}}}, ex path = /path?{{Name}}=1234&{{Name}}=5678
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList), ptr = 0, index = 0
+    Set tmpList = ..{{ModelProperty.Name}}.Serialize(), ptr = 0
     While $ListNext(tmpList, ptr, itemValue) {
-        Do {{HttpRequestObject}}.SetParam("{{Name}}", itemValue, $Increment(index))
+        Do {{HttpRequestObject}}.InsertParam("{{Name}}", itemValue)
     }
-    Kill tmpList, ptr, index, itemValue
+    Kill tmpList, ptr, itemValue
 }
 
 XData ArrayForm [ MimeType = plain/text ]
 {
     // Serialize the parameter list{{{Name}}}, ex path = /path?{{Name}}=1234,5678
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList), ptr = 0, valueParameter = ""
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize(), ptr = 0, valueParameter = ""
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:",") _ itemValue
     }
@@ -33,8 +31,7 @@ XData ArrayForm [ MimeType = plain/text ]
 XData ArraySpaceDelimited [ MimeType = plain/text ]
 {
     // Serialize the parameter list{{{Name}}}, ex path = /path?{{Name}}=1234%205678
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList), ptr = 0, valueParameter = ""
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize(), ptr = 0, valueParameter = ""
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:" ") _ itemValue
     }
@@ -44,9 +41,9 @@ XData ArraySpaceDelimited [ MimeType = plain/text ]
 
 XData ArrayPipeDelimited [ MimeType = plain/text ]
 {
+
     // Serialize the parameter list{{{Name}}}, ex path = /path?{{Name}}=1234|5678
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList), ptr = 0, valueParameter = ""
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize(), ptr = 0, valueParameter = ""
     While $ListNext(tmpList, ptr, itemValue) {
         Set valueParameter = valueParameter _ $s(valueParameter="":"",1:"|") _ itemValue
     }

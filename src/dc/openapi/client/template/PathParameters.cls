@@ -12,8 +12,7 @@ XData DatatypeSimple [ MimeType = plain/text ]
 XData ArraySimple [ MimeType = plain/text ]
 {
     // Serialize the list parameter {{{Name}}}, ex path = /path/{{{Name}}} to /path/1,2,3
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Set ..%Path = $Replace(..%Path, "{{{Name}}}", $ListToString(tmpList))
     Kill tmpList
 }
@@ -48,8 +47,7 @@ XData DatatypeLabel [ MimeType = plain/text ]
 XData ArrayLabel [ MimeType = plain/text ]
 {
     // Serialize the list parameter {{{Name}}}, ex path = /path/{{{Name}}} to /path/.1,2,3
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Set ..%Path = $Replace(..%Path, "{{{Name}}}", "."_$ListToString(tmpList))
     Kill tmpList
 }
@@ -58,8 +56,7 @@ XData ArrayLabel [ MimeType = plain/text ]
 XData ArrayLabelExplode [ MimeType = plain/text ]
 {
     // Serialize the list parameter {{{Name}}}, ex path = /path/{{{Name}}} to /path/.1.2.3
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Set ..%Path = $Replace(..%Path, "{{{Name}}}", "."_$ListToString(tmpList,"."))
     Kill tmpList
 }
@@ -94,8 +91,7 @@ XData DatatypeMatrix [ MimeType = plain/text ]
 XData ArrayMatrix [ MimeType = plain/text ]
 {
     // Serialize the list parameter {{{Name}}}, ex path = /path/{{{Name}}} to /path/;{{Name}}=1,2,3
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Set ..%Path = $Replace(..%Path, "{{{Name}}}", ";{{Name}}="_$ListToString(tmpList))
     Kill tmpList
 }
@@ -104,8 +100,7 @@ XData ArrayMatrix [ MimeType = plain/text ]
 XData ArrayMatrixExplode [ MimeType = plain/text ]
 {
     // Serialize the list parameter {{{Name}}}, ex path = /path/{{{Name}}} to /path/;{{Name}}=1;{{Name}}=2;{{Name}}=3
-    Do ..{{ModelProperty.Name}}.%SerializeObject(.tmpList)
-    Set tmpList = $List(tmpList)
+    Set tmpList =  ..{{ModelProperty.Name}}.Serialize()
     Set ..%Path = $Replace(..%Path, "{{{Name}}}", ";{{Name}}="_$ListToString(tmpList,";{{Name}}="))
     Kill tmpList
 }

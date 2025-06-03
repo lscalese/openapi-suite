@@ -11,6 +11,7 @@ XData UrlMap [ XMLNamespace = "http://www.intersystems.com/urlmap" ]
     <Route Url="/validate-document-collection" Method="POST" Call="ValidateDocumentCollection" />
     <Route Url="/generate-ast-collection" Method="POST" Call="GenerateASTCollection" />
     <Route Url="/generate-models" Method="POST" Call="GenerateModels" />
+    <Route Url="/httpclientgenconfig" Method="POST" Call="GetHttpClientGenConfig" />
 </Routes>
 }
 
@@ -66,6 +67,23 @@ ClassMethod GenerateASTCollection() As %Status
         Do ##class(%REST.Impl).%ReportRESTError(..#HTTP500INTERNALSERVERERROR,ex.AsStatus(),$parameter("dc.openapi.suite.api.impl","ExposeServerExceptions"))
     }
     Quit sc
+}
+
+ClassMethod GetHttpClientGenConfig() As %Status
+{
+    Set sc = $$$OK
+    Try {
+        Set ASTReference = ##class(dc.openapi.common.ASTReference).%New()
+        $$$TOE(sc,ASTReference.%JSONImport(%request.Content))
+        Set package = $Get(%request.Data("package",1))
+        Do ##class(%REST.Impl).%SetContentType("application/json")
+        Set response = ##class(dc.openapi.suite.apiv2.Implementation).GetHttpClientGenConfig(package, ASTReference)
+        Do ##class(dc.openapi.suite.apiv2.Implementation).%WriteResponse(response)
+    }
+    Catch(ex) {
+        Do ##class(%REST.Impl).%ReportRESTError(..#HTTP500INTERNALSERVERERROR,ex.AsStatus(),$parameter("dc.openapi.suite.api.impl","ExposeServerExceptions"))
+    }
+    Return sc
 }
 
 ClassMethod GenerateModels() As %Status
